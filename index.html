@@ -449,6 +449,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   <div class="topbar-actions">
     <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
     <button class="btn-outline" onclick="pullFromSheets()" title="Ambil data terbaru dari Google Sheets">Pull Sheets</button>
+    <button class="btn-outline" onclick="resetAndPull()" title="Hapus data lokal lalu ambil dari Google Sheets" style="border-color:rgba(239,154,154,0.4);color:#EF9A9A;">🔄 Reset & Pull</button>
     <button class="btn-gold" onclick="showPage('input')">+ Input Penjualan</button>
   </div>
 </div>
@@ -994,7 +995,7 @@ const STORAGE_KEY = 'qp_sales_2026';
 // 1. Buka Google Sheets Anda → Extensions → Apps Script
 // 2. Paste isi file google_apps_script.js → Save → Deploy → Copy URL
 // 3. Tempel URL di bawah ini:
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwuw_e9kKCE7Sw7813x8Pr5-A1pC9eHcz7I1aPsR-yykkcJcjvDzJR-JMkfHxOHS0Q0/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby0RVrvRAsTySEgTVooQzmXSU7gAOqz1I9U3ytyeMbR5E98l9Zn1kXgpVobL6K-l7Yn/exec';
 
 // URL CSV publik Google Sheets (untuk membaca data)
 const GSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHpDwyQh5xoX9Qwto9MG_s729naBRsVkcRbg8l8zZcpeShxtzsctiNLTNNFB7HCzRyxw1LnGXuVe9E/pub?output=csv&gid=991961989';
@@ -1867,8 +1868,29 @@ async function pushProductsToSheets() {
   } catch(e) { /* silent */ }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// MANAJEMEN STOK
+// ── RESET lokal & Pull dari Sheets ──
+async function resetAndPull() {
+  const konfirm = confirm(
+    '⚠️ RESET & PULL\n\n' +
+    'Ini akan MENGHAPUS semua data lokal di perangkat ini\n' +
+    'dan menggantinya dengan data dari Google Sheets.\n\n' +
+    'Lanjutkan?'
+  );
+  if (!konfirm) return;
+
+  // Hapus semua data lokal
+  salesData   = [];
+  stokData    = {};
+  riwayatStok = [];
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STOK_KEY);
+    localStorage.removeItem(RIWAYAT_KEY);
+  } catch(e) {}
+
+  // Tarik ulang dari Sheets
+  await pullFromSheets();
+}
 // ══════════════════════════════════════════════════════════════════════════════
 
 const STOK_KEY     = 'qp_stok_2026';
