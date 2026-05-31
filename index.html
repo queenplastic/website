@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Queen Plastic – Dashboard Penjualan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --black: #0F0F0F;
+  --black2: #1A1A1A;
+  --black3: #252525;
+  --gold: #C9A84C;
+  --gold2: #E8C56A;
+  --gold3: #F0D47A;
+  --gold-pale: #FDF5DC;
+  --gold-dim: rgba(201,168,76,0.15);
+  --white: #FAFAFA;
+  --gray: #888;
+  --gray2: #555;
+  --success: #4CAF50;
+  --danger: #E53935;
+  --radius: 12px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--black2); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: linear-gradient(135deg, var(--black2) 0%, #1E1A0E 100%);
+  border-bottom: 1px solid var(--gold-dim);
+  padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.6);
+}
+.topbar-brand {
+  display: flex; align-items: center; gap: 14px;
+}
+.topbar-logo {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--gold);
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(201,168,76,0.3);
+}
+.topbar-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; font-weight: 700;
+  color: var(--gold2);
+  letter-spacing: 0.02em;
+}
+.topbar-title span { color: var(--white); font-weight: 400; }
+.topbar-nav { display: flex; gap: 4px; }
+.nav-btn {
+  background: none; border: none; cursor: pointer;
+  color: var(--gray); font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem; font-weight: 500;
+  padding: 8px 16px; border-radius: 8px;
+  transition: all 0.2s;
+  letter-spacing: 0.03em;
+}
+.nav-btn:hover { color: var(--gold2); background: var(--gold-dim); }
+.nav-btn.active { color: var(--gold2); background: var(--gold-dim); border: 1px solid rgba(201,168,76,0.3); }
+.topbar-actions { display: flex; gap: 10px; }
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold3) 100%);
+  color: var(--black); font-weight: 700; font-size: 0.82rem;
+  border: none; cursor: pointer; border-radius: 8px;
+  padding: 8px 18px; letter-spacing: 0.04em;
+  transition: all 0.2s; text-transform: uppercase;
+  box-shadow: 0 2px 10px rgba(201,168,76,0.3);
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 18px rgba(201,168,76,0.45); }
+.btn-outline {
+  background: none;
+  border: 1px solid rgba(201,168,76,0.4);
+  color: var(--gold2); font-weight: 500; font-size: 0.82rem;
+  cursor: pointer; border-radius: 8px;
+  padding: 8px 18px; letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+.btn-outline:hover { background: var(--gold-dim); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 28px; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 24px;
+}
+.section-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 700;
+  color: var(--gold2);
+}
+.section-header .subtitle { color: var(--gray); font-size: 0.88rem; }
+.gold-line { width: 4px; height: 36px; background: linear-gradient(to bottom, var(--gold), var(--gold3)); border-radius: 2px; }
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px; margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--black2);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  position: relative; overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.kpi-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold3));
+}
+.kpi-label { font-size: 0.78rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.kpi-value { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--gold2); line-height: 1; }
+.kpi-sub { font-size: 0.78rem; color: var(--gray); margin-top: 6px; }
+
+/* ── CHART GRID ── */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+.chart-card {
+  background: var(--black2);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: var(--radius); padding: 20px;
+}
+.chart-card.wide { grid-column: 1 / -1; }
+.chart-title { font-size: 0.9rem; font-weight: 600; color: var(--gold2); margin-bottom: 16px; letter-spacing: 0.04em; }
+canvas { max-height: 260px; }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  background: var(--black2);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: var(--radius); padding: 16px 20px;
+  display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;
+  margin-bottom: 20px;
+}
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-group label { font-size: 0.76rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.07em; }
+select, input[type="text"], input[type="number"], input[type="date"] {
+  background: var(--black3); border: 1px solid rgba(201,168,76,0.25);
+  color: var(--white); border-radius: 8px;
+  padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+  outline: none; transition: border-color 0.2s;
+  min-width: 140px;
+}
+select:focus, input:focus { border-color: var(--gold); }
+select option { background: var(--black2); }
+
+/* ── DATA TABLE ── */
+.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid rgba(201,168,76,0.15); }
+table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+thead th {
+  background: var(--black3); color: var(--gold2);
+  padding: 12px 14px; text-align: left;
+  font-weight: 600; letter-spacing: 0.04em; font-size: 0.8rem;
+  white-space: nowrap; border-bottom: 2px solid rgba(201,168,76,0.3);
+  position: sticky; top: 0;
+}
+thead th:first-child { border-radius: var(--radius) 0 0 0; }
+tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s; }
+tbody tr:hover { background: rgba(201,168,76,0.06); }
+tbody td { padding: 10px 14px; color: var(--white); vertical-align: middle; }
+tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
+.badge {
+  display: inline-block; padding: 3px 9px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 600;
+}
+.badge-green { background: rgba(76,175,80,0.15); color: #81C784; }
+.badge-gold { background: var(--gold-dim); color: var(--gold2); }
+
+/* ── INPUT FORM ── */
+.form-card {
+  background: var(--black2);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: var(--radius); padding: 28px;
+  max-width: 900px; margin: 0 auto 28px;
+}
+.form-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem; color: var(--gold2); margin-bottom: 20px;
+  padding-bottom: 12px; border-bottom: 1px solid rgba(201,168,76,0.2);
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.07em; }
+.form-group input, .form-group select { min-width: unset; width: 100%; }
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+.btn-danger {
+  background: rgba(229,57,53,0.12); border: 1px solid rgba(229,57,53,0.3);
+  color: #EF9A9A; font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; border-radius: 8px; padding: 8px 18px;
+  transition: all 0.2s;
+}
+.btn-danger:hover { background: rgba(229,57,53,0.2); }
+
+/* ── ALERT ── */
+.alert {
+  position: fixed; top: 80px; right: 24px; z-index: 999;
+  background: var(--black2); border: 1px solid var(--gold);
+  border-radius: 10px; padding: 14px 20px;
+  box-shadow: var(--shadow);
+  animation: slideIn 0.3s ease;
+  max-width: 320px;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+.alert-success { border-color: var(--success); }
+.alert-text { font-size: 0.88rem; }
+
+/* ── PAGINATION ── */
+.pagination { display: flex; gap: 6px; margin-top: 14px; justify-content: flex-end; align-items: center; }
+.page-btn {
+  background: var(--black2); border: 1px solid rgba(201,168,76,0.2);
+  color: var(--gray); cursor: pointer; border-radius: 6px;
+  width: 32px; height: 32px; font-size: 0.82rem; transition: all 0.2s;
+}
+.page-btn:hover, .page-btn.active { background: var(--gold); color: var(--black); border-color: var(--gold); font-weight: 700; }
+.page-info { font-size: 0.8rem; color: var(--gray); }
+
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 768px) {
+  /* Topbar */
+  .topbar { padding: 0 12px; height: auto; min-height: 56px; flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+  .topbar-brand { flex: 1; }
+  .topbar-title { font-size: 1rem; }
+  .topbar-nav { display: none; }
+  .topbar-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 4px; }
+  .topbar-actions button { font-size: 0.75rem; padding: 6px 10px; flex: 1; min-width: 0; }
+  #gsync-indicator { width: 100%; padding: 2px 0; }
+
+  /* Pages */
+  .page { padding: 12px; }
+
+  /* KPI */
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .kpi-card { padding: 14px 12px; }
+  .kpi-value { font-size: 1.3rem; }
+  .kpi-icon { font-size: 1.1rem; }
+
+  /* Charts */
+  .chart-grid { grid-template-columns: 1fr; gap: 14px; }
+  canvas { max-height: 220px; }
+
+  /* Form */
+  .form-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-card { padding: 16px; }
+  .form-actions { flex-direction: column; }
+  .form-actions button { width: 100%; }
+
+  /* Filter bar */
+  .filter-bar { flex-direction: column; gap: 10px; padding: 12px; }
+  .filter-bar select, .filter-bar input { min-width: unset; width: 100%; }
+
+  /* Tables: horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 480px; font-size: 0.78rem; }
+  thead th, tbody td { padding: 8px 10px; }
+
+  /* Month tabs */
+  .month-tabs { gap: 4px; }
+  .month-tab { padding: 5px 10px; font-size: 0.75rem; }
+
+  /* Section header */
+  .section-header h2 { font-size: 1.2rem; }
+
+  /* Yearly table */
+  #page-tahunan .kpi-grid { grid-template-columns: 1fr; }
+
+  /* Bottom nav bar (mobile) */
+  .mobile-nav { display: flex; }
+}
+
+@media (min-width: 769px) {
+  .mobile-nav { display: none !important; }
+}
+
+/* ── MOBILE BOTTOM NAV ── */
+.mobile-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--black2);
+  border-top: 1px solid rgba(201,168,76,0.2);
+  display: none;
+  justify-content: space-around;
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+}
+.mobile-nav-btn {
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  color: var(--gray); font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem; font-weight: 500; padding: 6px 4px;
+  border-radius: 8px; transition: color 0.2s; flex: 1;
+  letter-spacing: 0.02em;
+}
+.mobile-nav-btn.active { color: var(--gold2); }
+.mobile-nav-btn:hover { color: var(--gold2); }
+
+/* Add padding at bottom on mobile so content not hidden by nav */
+@media (max-width: 768px) {
+  body { padding-bottom: 70px; }
+  /* Import modal full-width on mobile */
+  #import-modal > div { max-width: 100%; margin: 12px; border-radius: 12px; padding: 20px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--gray); }
+.empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+
+/* ── PRODUCT SEARCH DROPDOWN ── */
+.autocomplete-wrap { position: relative; }
+.autocomplete-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: var(--black2); border: 1px solid var(--gold);
+  border-top: none; border-radius: 0 0 8px 8px;
+  max-height: 220px; overflow-y: auto;
+}
+.autocomplete-item {
+  padding: 9px 14px; cursor: pointer; font-size: 0.86rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.autocomplete-item:hover { background: var(--gold-dim); color: var(--gold2); }
+
+/* ── MONTH TABS ── */
+.month-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.month-tab {
+  background: var(--black2); border: 1px solid rgba(201,168,76,0.2);
+  color: var(--gray); cursor: pointer; border-radius: 8px;
+  padding: 7px 16px; font-size: 0.82rem; font-weight: 500;
+  transition: all 0.2s;
+}
+.month-tab:hover { color: var(--gold2); border-color: var(--gold); }
+.month-tab.active { background: var(--gold); color: var(--black); border-color: var(--gold); font-weight: 700; }
+
+/* ── YEARLY TABLE ── */
+.yearly-table td.highlight { color: var(--gold2); font-weight: 600; }
+.yearly-table tfoot td { background: var(--black3); color: var(--gold2); font-weight: 700; }
+
+/* ── PROGRESS BAR ── */
+.progress-bar { background: rgba(255,255,255,0.06); border-radius: 4px; height: 5px; margin-top: 4px; }
+.progress-fill { background: linear-gradient(90deg, var(--gold), var(--gold3)); border-radius: 4px; height: 100%; transition: width 0.6s ease; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div style="position:relative;display:inline-block;">
+      <img id="brand-logo" src="" alt="Logo"
+        style="width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;background:#1A1A0E;display:block;"
+        onerror="this.style.display='none';document.getElementById('brand-logo-fallback').style.display='flex'"/>
+      <div id="brand-logo-fallback"
+        style="width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);background:#1A1A0E;display:flex;align-items:center;justify-content:center;">
+        <span style="font-family:'Playfair Display',serif;color:var(--gold2);font-weight:700;font-size:1rem;">Q</span>
+      </div>
+      <button onclick="openLogoSettings()" title="Ganti logo"
+        style="position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;font-size:9px;color:var(--black);font-weight:700;line-height:1;">✎</button>
+    </div>
+    <div>
+      <div class="topbar-title">Queen <span>Plastic</span></div>
+      <div style="font-size:0.7rem;color:var(--gray);letter-spacing:0.05em;">DASHBOARD PENJUALAN</div>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <button class="nav-btn active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showPage('input')">Input Data</button>
+    <button class="nav-btn" onclick="showPage('harian')">Detail Harian</button>
+    <button class="nav-btn" onclick="showPage('bulanan')">Rekapan Bulanan</button>
+    <button class="nav-btn" onclick="showPage('tahunan')">Rekapan Tahunan</button>
+    <button class="nav-btn" onclick="showPage('produk')">Produk</button>
+  </nav>
+  <div class="topbar-actions">
+    <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
+    <button class="btn-outline" onclick="pullFromSheets()" title="Ambil data terbaru dari Google Sheets">Pull Sheets</button>
+    <button class="btn-outline" onclick="triggerImport()">Import Excel</button>
+    <button class="btn-outline" onclick="exportExcel()">Export Excel</button>
+    <button class="btn-gold" onclick="showPage('input')">+ Input Penjualan</button>
+  </div>
+  <input type="file" id="import-file-input" accept=".xlsx" style="display:none" onchange="importExcel(this)"/>
+</div>
+
+<!-- PAGE: DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div>
+      <h2>Dashboard</h2>
+      <div class="subtitle">Ringkasan performa penjualan Queen Plastic</div>
+    </div>
+  </div>
+
+  <div class="filter-bar" style="margin-bottom:20px">
+    <div class="filter-group">
+      <label>Filter Bulan</label>
+      <select id="dash-month-filter" onchange="renderDashboard()">
+        <option value="all">Semua Bulan</option>
+        <option value="0">Januari</option><option value="1">Februari</option>
+        <option value="2">Maret</option><option value="3">April</option>
+        <option value="4">Mei</option><option value="5">Juni</option>
+        <option value="6">Juli</option><option value="7">Agustus</option>
+        <option value="8">September</option><option value="9">Oktober</option>
+        <option value="10">November</option><option value="11">Desember</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Total Omzet</div><div class="kpi-value" id="kpi-omzet">Rp 0</div><div class="kpi-sub" id="kpi-omzet-sub">–</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Qty Terjual</div><div class="kpi-value" id="kpi-qty">0</div><div class="kpi-sub" id="kpi-qty-sub">–</div></div>
+    <div class="kpi-card"><div class="kpi-label">Jumlah Produk Aktif</div><div class="kpi-value" id="kpi-produk">0</div><div class="kpi-sub">produk terjual</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Transaksi</div><div class="kpi-value" id="kpi-transaksi">0</div><div class="kpi-sub">entri data</div></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card wide">
+      <div class="chart-title">Omzet Per Bulan (Rp)</div>
+      <canvas id="chart-monthly"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top 10 Produk (Qty)</div>
+      <canvas id="chart-top-products"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Pack vs Eceran</div>
+      <canvas id="chart-pck-ecr"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: INPUT DATA -->
+<div id="page-input" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Input Penjualan</h2><div class="subtitle">Tambah data penjualan harian</div></div>
+  </div>
+
+  <div class="form-card">
+    <h3>Form Input Penjualan</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Tanggal *</label>
+        <input type="date" id="inp-tanggal" />
+      </div>
+      <div class="form-group">
+        <label>Bulan *</label>
+        <select id="inp-bulan">
+          <option value="0">Januari</option><option value="1">Februari</option>
+          <option value="2">Maret</option><option value="3">April</option>
+          <option value="4">Mei</option><option value="5">Juni</option>
+          <option value="6">Juli</option><option value="7">Agustus</option>
+          <option value="8">September</option><option value="9">Oktober</option>
+          <option value="10">November</option><option value="11">Desember</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nama Produk *</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="inp-produk" placeholder="Ketik nama produk..." autocomplete="off" oninput="showAutocomplete(this.value)" />
+          <div class="autocomplete-list" id="autocomplete-list" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Qty Pack (Pck)</label>
+        <input type="number" id="inp-pck" value="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Qty Eceran (Ecr)</label>
+        <input type="number" id="inp-ecr" value="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Preview Omzet</label>
+        <input type="text" id="inp-preview-omzet" readonly style="background:rgba(201,168,76,0.08);color:var(--gold2);font-weight:600;" />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-outline" onclick="clearForm()">Bersihkan</button>
+      <button class="btn-gold" onclick="saveEntry()">Simpan Data</button>
+    </div>
+  </div>
+
+  <!-- Recent entries table -->
+  <div class="section-header" style="margin-top:8px">
+    <div class="gold-line"></div>
+    <div><h2 style="font-size:1.2rem">Data Terbaru</h2></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Tanggal</th><th>Produk</th><th>Pack</th><th>Eceran</th>
+        <th>Harga/Pack</th><th>Harga/Ecr</th><th>Omzet</th><th>Aksi</th>
+      </tr></thead>
+      <tbody id="recent-entries"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: DETAIL HARIAN -->
+<div id="page-harian" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Detail Harian</h2><div class="subtitle">Rincian penjualan per tanggal</div></div>
+  </div>
+  <div class="month-tabs" id="harian-month-tabs"></div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Cari Produk</label>
+      <input type="text" id="harian-search" placeholder="Filter produk..." oninput="renderHarian()" />
+    </div>
+  </div>
+  <div id="harian-calendar"></div>
+</div>
+
+<!-- PAGE: REKAPAN BULANAN -->
+<div id="page-bulanan" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Rekapan Bulanan</h2><div class="subtitle">Ringkasan penjualan per produk per bulan</div></div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Cari Produk</label>
+      <input type="text" id="bulanan-search" placeholder="Filter produk..." oninput="renderBulanan()" />
+    </div>
+    <div class="filter-group">
+      <label>Urutkan</label>
+      <select id="bulanan-sort" onchange="renderBulanan()">
+        <option value="nama">Nama A–Z</option>
+        <option value="omzet">Omzet Tertinggi</option>
+        <option value="qty">Qty Tertinggi</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap" id="bulanan-table-wrap"></div>
+  <div class="pagination" id="bulanan-pagination"></div>
+</div>
+
+<!-- PAGE: REKAPAN TAHUNAN -->
+<div id="page-tahunan" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Rekapan Tahunan</h2><div class="subtitle">Total penjualan per bulan</div></div>
+  </div>
+  <div class="kpi-grid" id="tahunan-kpi"></div>
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-title">Omzet Bulanan</div>
+    <canvas id="chart-tahunan" style="max-height:300px"></canvas>
+  </div>
+  <div class="table-wrap">
+    <table class="yearly-table">
+      <thead><tr>
+        <th>Bulan</th><th class="num">Total Pack</th><th class="num">Total Eceran</th>
+        <th class="num">Total Qty</th><th class="num">Total Omzet</th><th class="num">% dari Tahunan</th>
+      </tr></thead>
+      <tbody id="tahunan-tbody"></tbody>
+      <tfoot><tr>
+        <td style="padding:10px 14px;font-weight:700;color:var(--gold2)">TOTAL TAHUNAN</td>
+        <td class="num" id="tahunan-total-pack" style="padding:10px 14px;font-weight:700;color:var(--gold2)">0</td>
+        <td class="num" id="tahunan-total-ecr" style="padding:10px 14px;font-weight:700;color:var(--gold2)">0</td>
+        <td class="num" id="tahunan-total-qty" style="padding:10px 14px;font-weight:700;color:var(--gold2)">0</td>
+        <td class="num" id="tahunan-total-omzet" style="padding:10px 14px;font-weight:700;color:var(--gold2)">Rp 0</td>
+        <td class="num" style="padding:10px 14px;color:var(--gold2);font-weight:700">100%</td>
+      </tr></tfoot>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE: PRODUK -->
+<div id="page-produk" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Master Produk</h2><div class="subtitle">Daftar 189 produk dengan harga</div></div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Cari Produk</label>
+      <input type="text" id="produk-search" placeholder="Cari nama produk..." oninput="renderProduk()" />
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>No</th><th>Nama Produk</th>
+        <th class="num">Harga Modal</th><th class="num">Harga Jual (Pack)</th>
+        <th class="num">Harga Jual (Ecr)</th><th class="num">Margin Pack</th>
+      </tr></thead>
+      <tbody id="produk-tbody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="produk-pagination"></div>
+</div>
+
+<!-- LOGO SETTINGS MODAL -->
+<div id="logo-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:var(--black2);border:1px solid var(--gold);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 16px 60px rgba(0,0,0,0.7);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:4px;height:36px;background:linear-gradient(to bottom,var(--gold),var(--gold3));border-radius:2px;"></div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold2);font-weight:700;">Ganti Logo</div>
+        <div style="font-size:0.78rem;color:var(--gray);">Upload gambar atau masukkan URL</div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div style="display:flex;justify-content:center;margin-bottom:20px;">
+      <img id="logo-preview" src="" alt="Preview"
+        style="width:72px;height:72px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;background:#1A1A0E;"
+        onerror="this.src=''"/>
+    </div>
+
+    <!-- Upload file -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:0.78rem;color:var(--gray);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Upload dari perangkat</div>
+      <input type="file" id="logo-file-input" accept="image/*" onchange="previewLogoFile(this)"
+        style="width:100%;background:var(--black3);border:1px solid rgba(201,168,76,0.25);color:var(--white);border-radius:8px;padding:8px 12px;font-size:0.85rem;cursor:pointer;"/>
+    </div>
+
+    <!-- URL input -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:0.78rem;color:var(--gray);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.07em;">Atau masukkan URL gambar</div>
+      <input type="text" id="logo-url-input" placeholder="https://..." oninput="previewLogoUrl(this.value)"
+        style="width:100%;background:var(--black3);border:1px solid rgba(201,168,76,0.25);color:var(--white);border-radius:8px;padding:8px 12px;font-size:0.85rem;font-family:'DM Sans',sans-serif;"/>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:space-between;">
+      <button class="btn-danger" onclick="removeLogo()">Hapus Logo</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-outline" onclick="closeLogoModal()">Batal</button>
+        <button class="btn-gold" onclick="applyLogo()">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="mobile-nav-btn active" onclick="showPage('dashboard');setMobileActive(this)">Dashboard</button>
+  <button class="mobile-nav-btn" onclick="showPage('input');setMobileActive(this)">Input</button>
+  <button class="mobile-nav-btn" onclick="showPage('harian');setMobileActive(this)">Harian</button>
+  <button class="mobile-nav-btn" onclick="showPage('bulanan');setMobileActive(this)">Bulanan</button>
+  <button class="mobile-nav-btn" onclick="showPage('tahunan');setMobileActive(this)">Tahunan</button>
+  <button class="mobile-nav-btn" onclick="showPage('produk');setMobileActive(this)">Produk</button>
+</nav>
+
+<!-- IMPORT MODAL -->
+<div id="import-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:var(--black2);border:1px solid var(--gold);border-radius:16px;padding:32px;max-width:520px;width:90%;box-shadow:0 16px 60px rgba(0,0,0,0.7);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:4px;height:36px;background:linear-gradient(to bottom,var(--gold),var(--gold3));border-radius:2px;"></div>
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold2);font-weight:700;">Import dari Excel</div>
+        <div style="font-size:0.8rem;color:var(--gray);">Sinkronisasi data dari file Excel</div>
+      </div>
+    </div>
+    <div id="import-status" style="margin-bottom:18px;font-size:0.88rem;color:var(--gray);background:var(--black3);border-radius:8px;padding:14px;min-height:60px;"></div>
+    <div style="background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:14px;margin-bottom:20px;font-size:0.82rem;color:var(--gray);line-height:1.7;">
+      <strong style="color:var(--gold2);">Cara kerja import:</strong><br>
+      • Membaca sheet <strong style="color:var(--white)">HARIAN JAN – HARIAN DES</strong><br>
+      • Data yang sudah ada di dashboard akan <strong style="color:#EF9A9A">digabung</strong> (tidak dihapus)<br>
+      • Duplikat otomatis dilewati berdasarkan tanggal + produk + qty<br>
+      • Harga diambil dari master produk di dashboard
+    </div>
+    <div id="import-merge-opt" style="display:flex;gap:10px;margin-bottom:20px;">
+      <button onclick="setMergeMode('merge')" id="btn-merge" class="btn-gold" style="flex:1;font-size:0.8rem;padding:10px;">Gabung (Merge)</button>
+      <button onclick="setMergeMode('replace')" id="btn-replace" class="btn-outline" style="flex:1;font-size:0.8rem;padding:10px;">Timpa (Replace)</button>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn-outline" onclick="closeImportModal()">Batal</button>
+      <button class="btn-gold" id="btn-confirm-import" onclick="confirmImport()" disabled style="opacity:0.4;cursor:not-allowed;">Terapkan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════════════════════════════
+const PRODUCTS = [{"nama":"ASERA HIJAU","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"ASERA UNGU","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL COKLAT 500 ML","harga_modal":28000,"harga_jual_pck":30000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL COKLAT 650 ML","harga_modal":31000,"harga_jual_pck":33000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL COKLAT 800 ML","harga_modal":32000,"harga_jual_pck":34000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL PUTIH 500 ML","harga_modal":32000,"harga_jual_pck":35000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL PUTIH 650 ML","harga_modal":36000,"harga_jual_pck":38000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL PUTIH 800 ML","harga_modal":38000,"harga_jual_pck":40000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"CLIN WRAP","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"DUA PEDANG","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GAJAH MERAH","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GALON","harga_modal":20000,"harga_jual_pck":22000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GARPU BUAH","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GAS","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 12","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 14","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 14 OVAL","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 16","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 16 OVAL","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 18 OVAL","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS ES BUAH","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS KOPI COKLAT","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS KOPI PUTIH","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS PUDING","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS SLIM 18 ISI 25","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS ZAM ZAM 18 ISI 50","harga_modal":20000,"harga_jual_pck":23000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GULA PASIR","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS L","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS M","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS S","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS XS","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ARTHA 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ARTHA 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS HITAM 50","harga_modal":22000,"harga_jual_pck":25000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS JUMBO","harga_modal":25000,"harga_jual_pck":28000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS LORENG 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS TEBAL 40","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS TIPIS 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS TIPIS 40","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG BAJI HITAM 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG BAJI PUTIH 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG CAHAYA 28","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 1","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 1 WARNA","harga_modal":9000,"harga_jual_pck":11000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 2","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 2 WARNA","harga_modal":11000,"harga_jual_pck":13000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GLOBAL 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG HELEM 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KAISAR 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KAISAR 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KATES TIPIS 14","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KILOAN 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KUDA 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KUDA HITAM 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KUDA MERAH 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KURA' 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KURA' TIPIS 14","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG LORI BIRU 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG LORI KUNING 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG MENTARI 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG MENTARI 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG MENTARI 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG PITA TIPIS 14","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG RAJAWALI 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG RMW 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG SAMPAH","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG TRIMA KASIH 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG TRIMA KASIH 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KAOS TANGAN PLASTIK","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KARET 5000","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KARET PELANGI","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KECAP JEMPOL","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KOMPAS","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"LAMINASI","harga_modal":12000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"LAMINASI MOTIF","harga_modal":14000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"LOMBOK JEMPOL","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MANTEL","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 3A","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 3C","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 3CX","harga_modal":11000,"harga_jual_pck":13000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 4CX","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 5CA","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 6C","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 7C","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK BIMOLI","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK KITA 1L","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK KITA 2L","harga_modal":24000,"harga_jual_pck":27000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK KUNCI MAS","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK RIZKI 1L","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TEBAL 100ML","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TEBAL 35ML","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TIPIS 100ML","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TIPIS 35ML","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAKU","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAPER BAG BESAR","harga_modal":15000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAPER BAG KECIL","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAPER BAG SEDANG","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PLASTIK ROLL","harga_modal":15000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PONCH PIPA L","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PONCH PIPA M","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PONCH PIPA S","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"RAFIA","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SAOS JEMPOL","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEAL CUP","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN BESAR","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN BENGKOK","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN BIASA","harga_modal":4000,"harga_jual_pck":6000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN JUMBO","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK COKLAT DAWET","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK COKLAT JUARA","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK COKLAT WAN","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK PUTIH DAWET","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK PUTIH JUARA","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK PUTIH WAN","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SHEEL CUP MOTIF","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SHEEL CUP POLOS","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SOLASI FRESH","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 10X17","harga_modal":15000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 12X20","harga_modal":18000,"harga_jual_pck":21000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 14X22","harga_modal":20000,"harga_jual_pck":23000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 16X24","harga_modal":22000,"harga_jual_pck":25000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 20X29","harga_modal":25000,"harga_jual_pck":28000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 9X15","harga_modal":12000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM BURGER","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM KECIL","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM KOTAK","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM SEKAT","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SUMPIT","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TEH SOSRO","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TELUR BESAR","harga_modal":28000,"harga_jual_pck":30000,"harga_jual_ecr":2500,"isi_per_pack":0},{"nama":"TELUR JUMBO","harga_modal":30000,"harga_jual_pck":32000,"harga_jual_ecr":3000,"isi_per_pack":0},{"nama":"TELUR KECIL","harga_modal":22000,"harga_jual_pck":24000,"harga_jual_ecr":2000,"isi_per_pack":0},{"nama":"TELUR SEDANG","harga_modal":25000,"harga_jual_pck":27000,"harga_jual_ecr":2200,"isi_per_pack":0},{"nama":"THINWALL BULAT 200 ML","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL BULAT 400 ML","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL BULAT 450 ML","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 1000ML","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 120 ML","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 150 ML","harga_modal":9000,"harga_jual_pck":11000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 1500ML","harga_modal":17000,"harga_jual_pck":19000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 200 ML","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 300 ML","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 500 ML","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 650 ML","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 750 ML","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TINHWALL PANJANG 1000 ML","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU MULTI BIRU","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU MULTI MERAH","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU PENGANTIN BESAR","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU PENGANTIN KECIL","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSUE JOLY","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSUE SEEU","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TOMAT JEMPOL","harga_modal":4000,"harga_jual_pck":5000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUSUK CILOK","harga_modal":5000,"harga_jual_pck":6000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUSUK PANDA","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUSUK PETA","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP ATLAS","harga_modal":3000,"harga_jual_pck":5000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP ATLAS CEKUNG","harga_modal":4000,"harga_jual_pck":6000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP GELAS KOPI","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP PREMIUM","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP SARINDO","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0}];
+
+const MONTH_NAMES = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
+const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GOOGLE SHEETS SYNC CONFIG
+// ══════════════════════════════════════════════════════════════════════════════
+const STORAGE_KEY = 'qp_sales_2026';
+
+// ⬇️  LANGKAH SETUP:
+// 1. Buka Google Sheets Anda → Extensions → Apps Script
+// 2. Paste isi file google_apps_script.js → Save → Deploy → Copy URL
+// 3. Tempel URL di bawah ini:
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxAXbExQxPqBf35PnAN7rHcGJ7pdE1XBK-uIGeJyIftkLFNBeuLxXmITCjvDwSUZ4Zl/exec';
+
+// URL CSV publik Google Sheets (untuk membaca data)
+const GSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdCF1lFLGX6UMh2KdrPsAIFt3YUX_2RALbMJdomC8G40JR8D3v3FvMbhPpvgFICNZcWK-V-S1_PwFu/pub?output=csv';
+
+let gsyncStatus = 'idle'; // idle | syncing | error | ok
+
+function updateSyncIndicator(status, msg) {
+  gsyncStatus = status;
+  const el = document.getElementById('gsync-indicator');
+  if (!el) return;
+  const colors = { idle: 'var(--gray)', syncing: 'var(--gold2)', error: '#EF9A9A', ok: '#81C784' };
+  const icons  = { idle: '·', syncing: '·', error: '·', ok: '·' };
+  el.innerHTML = `<span style="color:${colors[status]};font-size:0.78rem">${icons[status]} ${msg}</span>`;
+}
+
+// ── LOAD / SAVE DATA ──
+let salesData = [];
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    salesData = raw ? JSON.parse(raw) : [];
+  } catch(e) { salesData = []; }
+}
+
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
+  // Auto-push ke Google Sheets jika GAS_URL sudah diisi
+  if (GAS_URL) pushToSheets();
+}
+
+// ── PUSH ke Google Sheets (via Apps Script) ──
+async function pushToSheets() {
+  if (!GAS_URL) return;
+  updateSyncIndicator('syncing', 'Menyimpan ke Google Sheets...');
+  try {
+    const monthly = buildMonthlySummary();
+    const tahunan = buildTahunanSummary();
+    const res = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'writeAll', monthly, tahunan, salesData })
+    });
+    const result = await res.json();
+    if (result.status === 'ok') {
+      updateSyncIndicator('ok', 'Tersimpan di Google Sheets');
+      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
+    } else {
+      updateSyncIndicator('error', 'Gagal sync: ' + (result.message || 'unknown'));
+    }
+  } catch(e) {
+    updateSyncIndicator('error', 'Gagal terhubung ke Apps Script');
+  }
+}
+
+// ── PULL dari Google Sheets (baca CSV publik) ──
+async function pullFromSheets() {
+  updateSyncIndicator('syncing', 'Membaca dari Google Sheets...');
+  try {
+    const res = await fetch(GSHEET_CSV_URL + '&t=' + Date.now());
+    const text = await res.text();
+    const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+
+    // Parse CSV: format kolom = tanggal,bulan,produk,pck,ecr,hj_pck,hj_ecr,omzet
+    // Sheet Detail Penjualan (mulai baris setelah header)
+    const dataRows = rows.filter(r => r[0] && r[0].match(/^\d{4}-\d{2}-\d{2}$/));
+    if (dataRows.length === 0) {
+      updateSyncIndicator('ok', 'Google Sheets kosong (belum ada data penjualan)');
+      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
+      return;
+    }
+
+    const pulled = dataRows.map(r => ({
+      id: Date.now() + Math.random(),
+      tanggal: r[0],
+      bulan: MONTH_NAMES.indexOf((r[1]||'').toUpperCase()),
+      produk: r[2] || '',
+      pck: parseInt(r[3]) || 0,
+      ecr: parseInt(r[4]) || 0,
+      hj_pck: parseInt(r[5]) || 0,
+      hj_ecr: parseInt(r[6]) || 0,
+      omzet: parseInt(r[7]) || 0,
+    })).filter(d => d.bulan >= 0 && d.produk);
+
+    const existingKeys = new Set(salesData.map(d => `${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
+    const newEntries = pulled.filter(d => !existingKeys.has(`${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
+    salesData = [...salesData, ...newEntries];
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
+    renderDashboard();
+    updateSyncIndicator('ok', `Berhasil tarik ${newEntries.length} entri baru`);
+    setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
+    if (newEntries.length > 0) showAlert(` ${newEntries.length} data baru dari Google Sheets!`, true);
+  } catch(e) {
+    updateSyncIndicator('error', 'Gagal baca Google Sheets');
+  }
+}
+
+// ── BUILD SUMMARY untuk ditulis ke Sheets ──
+function buildMonthlySummary() {
+  const map = {};
+  for (const d of salesData) {
+    if (!map[d.produk]) map[d.produk] = { pck: Array(12).fill(0), ecr: Array(12).fill(0), omzet: Array(12).fill(0) };
+    map[d.produk].pck[d.bulan] += d.pck || 0;
+    map[d.produk].ecr[d.bulan] += d.ecr || 0;
+    map[d.produk].omzet[d.bulan] += d.omzet || 0;
+  }
+  return PRODUCTS.map(p => {
+    const m = map[p.nama] || { pck: Array(12).fill(0), ecr: Array(12).fill(0), omzet: Array(12).fill(0) };
+    return { produk: p.nama, pck: m.pck, ecr: m.ecr, omzet: m.omzet,
+      totalQty: m.pck.reduce((s,v)=>s+v,0) + m.ecr.reduce((s,v)=>s+v,0),
+      totalOmzet: m.omzet.reduce((s,v)=>s+v,0) };
+  });
+}
+
+function buildTahunanSummary() {
+  const monthly = aggregateByMonth();
+  const grand = monthly.reduce((s,m) => ({ pck: s.pck+m.pck, ecr: s.ecr+m.ecr, omzet: s.omzet+m.omzet }), {pck:0,ecr:0,omzet:0});
+  return monthly.map((m, i) => ({
+    bulan: MONTH_NAMES[i],
+    pck: m.pck, ecr: m.ecr,
+    qty: m.pck + m.ecr,
+    omzet: m.omzet,
+    pct: grand.omzet > 0 ? ((m.omzet / grand.omzet) * 100).toFixed(1) + '%' : '0,0%'
+  }));
+}
+
+// ── HELPERS ──
+function rp(n) { return 'Rp ' + (n||0).toLocaleString('id-ID'); }
+function fmt(n) { return (n||0).toLocaleString('id-ID'); }
+
+// ── MOBILE NAV SYNC ──
+function setMobileActive(btn) {
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// ── PAGE NAVIGATION ──
+let currentPage = 'dashboard';
+let charts = {};
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(name === 'dashboard' ? 'dashboard' :
+        name === 'input' ? 'input' : name === 'harian' ? 'harian' :
+        name === 'bulanan' ? 'bulanan' : name === 'tahunan' ? 'tahunan' : 'produk'))
+      b.classList.add('active');
+  });
+  // Sync mobile bottom nav
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => {
+    const txt = b.textContent.trim().toLowerCase();
+    b.classList.toggle('active', txt.includes(name === 'dashboard' ? 'dashboard' :
+      name === 'input' ? 'input' : name === 'harian' ? 'harian' :
+      name === 'bulanan' ? 'bulanan' : name === 'tahunan' ? 'tahunan' : 'produk'));
+  });
+  currentPage = name;
+  if (name === 'dashboard') renderDashboard();
+  else if (name === 'input') renderRecent();
+  else if (name === 'harian') initHarian();
+  else if (name === 'bulanan') renderBulanan();
+  else if (name === 'tahunan') renderTahunan();
+  else if (name === 'produk') renderProduk();
+  // Scroll to top on mobile
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── GET FILTERED DATA ──
+function getFilteredData(monthIdx) {
+  if (monthIdx === 'all' || monthIdx === null) return salesData;
+  return salesData.filter(d => d.bulan === parseInt(monthIdx));
+}
+
+// ── AGGREGATE ──
+function aggregateByMonth() {
+  const result = Array(12).fill(null).map(() => ({ pck: 0, ecr: 0, omzet: 0 }));
+  for (const d of salesData) {
+    const m = d.bulan;
+    if (m >= 0 && m < 12) {
+      result[m].pck += d.pck || 0;
+      result[m].ecr += d.ecr || 0;
+      result[m].omzet += d.omzet || 0;
+    }
+  }
+  return result;
+}
+function aggregateByProduct(data) {
+  const map = {};
+  for (const d of data) {
+    if (!map[d.produk]) map[d.produk] = { qty: 0, omzet: 0, pck: 0, ecr: 0 };
+    map[d.produk].pck += d.pck || 0;
+    map[d.produk].ecr += d.ecr || 0;
+    map[d.produk].qty += (d.pck || 0) + (d.ecr || 0);
+    map[d.produk].omzet += d.omzet || 0;
+  }
+  return map;
+}
+
+// ── RENDER DASHBOARD ──
+function renderDashboard() {
+  const mFilter = document.getElementById('dash-month-filter').value;
+  const data = getFilteredData(mFilter === 'all' ? null : mFilter);
+
+  const totalOmzet = data.reduce((s, d) => s + (d.omzet || 0), 0);
+  const totalQty = data.reduce((s, d) => s + (d.pck || 0) + (d.ecr || 0), 0);
+  const activeProds = new Set(data.map(d => d.produk)).size;
+  const totalEntries = data.length;
+
+  document.getElementById('kpi-omzet').textContent = rp(totalOmzet);
+  document.getElementById('kpi-qty').textContent = fmt(totalQty);
+  document.getElementById('kpi-produk').textContent = fmt(activeProds);
+  document.getElementById('kpi-transaksi').textContent = fmt(totalEntries);
+  const mLabel = mFilter === 'all' ? 'Semua bulan' : MONTH_NAMES[parseInt(mFilter)];
+  document.getElementById('kpi-omzet-sub').textContent = mLabel;
+  document.getElementById('kpi-qty-sub').textContent = mLabel;
+
+  // Chart: monthly omzet
+  const monthly = aggregateByMonth();
+  destroyChart('chart-monthly');
+  charts['chart-monthly'] = new Chart(document.getElementById('chart-monthly'), {
+    type: 'bar',
+    data: {
+      labels: MONTH_NAMES.map(m => m.substring(0,3)),
+      datasets: [{
+        label: 'Omzet (Rp)',
+        data: monthly.map(m => m.omzet),
+        backgroundColor: monthly.map((m, i) =>
+          (mFilter !== 'all' && i === parseInt(mFilter)) ? 'rgba(240,212,122,0.9)' : 'rgba(201,168,76,0.6)'),
+        borderColor: 'rgba(201,168,76,0.9)',
+        borderWidth: 1, borderRadius: 6,
+      }]
+    },
+    options: chartOptions('Rp')
+  });
+
+  // Chart: top 10 products
+  const prodMap = aggregateByProduct(data);
+  const top10 = Object.entries(prodMap).sort((a,b) => b[1].qty - a[1].qty).slice(0, 10);
+  destroyChart('chart-top-products');
+  charts['chart-top-products'] = new Chart(document.getElementById('chart-top-products'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(([k]) => k.length > 18 ? k.substring(0,18)+'…' : k),
+      datasets: [{ label: 'Qty', data: top10.map(([,v]) => v.qty),
+        backgroundColor: 'rgba(201,168,76,0.7)', borderRadius: 4 }]
+    },
+    options: { ...chartOptions(), indexAxis: 'y', plugins: { legend: { display: false } } }
+  });
+
+  // Chart: pck vs ecr
+  const totalPck = data.reduce((s,d) => s + (d.pck||0), 0);
+  const totalEcr = data.reduce((s,d) => s + (d.ecr||0), 0);
+  destroyChart('chart-pck-ecr');
+  charts['chart-pck-ecr'] = new Chart(document.getElementById('chart-pck-ecr'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pack', 'Eceran'],
+      datasets: [{ data: [totalPck, totalEcr],
+        backgroundColor: ['rgba(201,168,76,0.85)', 'rgba(201,168,76,0.3)'],
+        borderColor: '#1A1A1A', borderWidth: 3 }]
+    },
+    options: { plugins: { legend: { labels: { color: '#FAFAFA', font: { family: 'DM Sans' } } } }, cutout: '65%' }
+  });
+}
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function chartOptions(unit) {
+  return {
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#888', font: { family: 'DM Sans', size: 10 } },
+           grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { color: '#888', font: { family: 'DM Sans', size: 10 },
+             callback: v => unit === 'Rp' ? 'Rp'+fmt(v) : fmt(v) },
+           grid: { color: 'rgba(255,255,255,0.05)' } }
+    }
+  };
+}
+
+// ── AUTOCOMPLETE ──
+let selectedProduct = null;
+function showAutocomplete(val) {
+  selectedProduct = null;
+  updateOmzetPreview();
+  const list = document.getElementById('autocomplete-list');
+  if (!val || val.length < 1) { list.style.display = 'none'; return; }
+  const matches = PRODUCTS.filter(p => p.nama.toLowerCase().includes(val.toLowerCase())).slice(0, 12);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(p =>
+    `<div class="autocomplete-item" onclick="selectProduct('${p.nama.replace(/'/g,"\\'")}')">
+      ${p.nama} <span style="color:var(--gray);font-size:0.78rem;float:right">${rp(p.harga_jual_pck)}</span>
+    </div>`).join('');
+  list.style.display = 'block';
+}
+function selectProduct(nama) {
+  document.getElementById('inp-produk').value = nama;
+  document.getElementById('autocomplete-list').style.display = 'none';
+  selectedProduct = PRODUCTS.find(p => p.nama === nama);
+  updateOmzetPreview();
+}
+function updateOmzetPreview() {
+  const pck = parseInt(document.getElementById('inp-pck').value) || 0;
+  const ecr = parseInt(document.getElementById('inp-ecr').value) || 0;
+  if (!selectedProduct) { document.getElementById('inp-preview-omzet').value = '–'; return; }
+  const omzet = pck * selectedProduct.harga_jual_pck + ecr * (selectedProduct.harga_jual_ecr || selectedProduct.harga_jual_pck);
+  document.getElementById('inp-preview-omzet').value = rp(omzet);
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-wrap'))
+    document.getElementById('autocomplete-list').style.display = 'none';
+});
+document.getElementById('inp-pck').addEventListener('input', updateOmzetPreview);
+document.getElementById('inp-ecr').addEventListener('input', updateOmzetPreview);
+
+// ── SAVE ENTRY ──
+function saveEntry() {
+  const tanggal = document.getElementById('inp-tanggal').value;
+  const bulan = parseInt(document.getElementById('inp-bulan').value);
+  const produkNama = document.getElementById('inp-produk').value.trim();
+  const pck = parseInt(document.getElementById('inp-pck').value) || 0;
+  const ecr = parseInt(document.getElementById('inp-ecr').value) || 0;
+
+  if (!tanggal) return showAlert('Pilih tanggal dulu!', false);
+  if (!produkNama) return showAlert('Pilih nama produk!', false);
+  if (!selectedProduct) {
+    selectedProduct = PRODUCTS.find(p => p.nama.toLowerCase() === produkNama.toLowerCase());
+  }
+  if (!selectedProduct) return showAlert('Produk tidak ditemukan di master!', false);
+  if (pck === 0 && ecr === 0) return showAlert('Qty Pack dan Eceran tidak boleh keduanya 0!', false);
+
+  const omzet = pck * selectedProduct.harga_jual_pck + ecr * (selectedProduct.harga_jual_ecr || selectedProduct.harga_jual_pck);
+  const entry = {
+    id: Date.now(),
+    tanggal, bulan,
+    produk: selectedProduct.nama,
+    pck, ecr,
+    hj_pck: selectedProduct.harga_jual_pck,
+    hj_ecr: selectedProduct.harga_jual_ecr || selectedProduct.harga_jual_pck,
+    omzet
+  };
+  salesData.push(entry);
+  saveData();
+  showAlert('Data berhasil disimpan! ✨', true);
+  clearForm();
+  renderRecent();
+}
+
+function clearForm() {
+  document.getElementById('inp-tanggal').value = '';
+  document.getElementById('inp-produk').value = '';
+  document.getElementById('inp-pck').value = '0';
+  document.getElementById('inp-ecr').value = '0';
+  document.getElementById('inp-preview-omzet').value = '';
+  selectedProduct = null;
+}
+
+function deleteEntry(id) {
+  salesData = salesData.filter(d => d.id !== id);
+  saveData();
+  renderRecent();
+}
+
+// ── RENDER RECENT ENTRIES ──
+function renderRecent() {
+  const tbody = document.getElementById('recent-entries');
+  const recent = [...salesData].reverse().slice(0, 50);
+  if (!recent.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div>Belum ada data. Mulai input penjualan!</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = recent.map(d => `
+    <tr>
+      <td>${d.tanggal}</td>
+      <td class="product-name">${d.produk}</td>
+      <td class="num">${fmt(d.pck)}</td>
+      <td class="num">${fmt(d.ecr)}</td>
+      <td class="num">${rp(d.hj_pck)}</td>
+      <td class="num">${rp(d.hj_ecr)}</td>
+      <td class="num"><span class="badge badge-green">${rp(d.omzet)}</span></td>
+      <td><button class="btn-danger" onclick="deleteEntry(${d.id})" style="padding:4px 10px;font-size:0.75rem">Hapus</button></td>
+    </tr>`).join('');
+}
+
+// ── HARIAN ──
+let harianMonth = 0;
+function initHarian() {
+  const tabs = document.getElementById('harian-month-tabs');
+  tabs.innerHTML = MONTH_NAMES.map((m, i) =>
+    `<button class="month-tab ${i === harianMonth ? 'active' : ''}" onclick="setHarianMonth(${i})">${m.substring(0,3)}</button>`
+  ).join('');
+  renderHarian();
+}
+function setHarianMonth(i) {
+  harianMonth = i;
+  document.querySelectorAll('.month-tab').forEach((b, idx) => b.classList.toggle('active', idx === i));
+  renderHarian();
+}
+function renderHarian() {
+  const search = document.getElementById('harian-search').value.toLowerCase();
+  const data = salesData.filter(d => d.bulan === harianMonth);
+  const container = document.getElementById('harian-calendar');
+
+  // Group by date
+  const byDate = {};
+  for (const d of data) {
+    if (!byDate[d.tanggal]) byDate[d.tanggal] = [];
+    byDate[d.tanggal].push(d);
+  }
+  const dates = Object.keys(byDate).sort();
+
+  if (!dates.length) {
+    container.innerHTML = `<div class="empty-state"><div>Belum ada data untuk bulan ${MONTH_NAMES[harianMonth]}</div></div>`;
+    return;
+  }
+
+  let html = '';
+  for (const date of dates) {
+    let entries = byDate[date];
+    if (search) entries = entries.filter(e => e.produk.toLowerCase().includes(search));
+    if (!entries.length) continue;
+    const dayOmzet = entries.reduce((s, e) => s + e.omzet, 0);
+    const dayQty = entries.reduce((s, e) => s + e.pck + e.ecr, 0);
+    html += `<div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--black3);border-radius:8px 8px 0 0;border-bottom:2px solid rgba(201,168,76,0.3)">
+        <span style="font-weight:700;color:var(--gold2);font-family:'Playfair Display',serif">${date}</span>
+        <span style="font-size:0.82rem;color:var(--gray)">${entries.length} produk · ${fmt(dayQty)} qty · <strong style="color:var(--gold2)">${rp(dayOmzet)}</strong></span>
+      </div>
+      <div class="table-wrap" style="border-radius:0 0 8px 8px;border-top:none">
+        <table>
+          <thead><tr><th>Produk</th><th class="num">Pack</th><th class="num">Eceran</th><th class="num">Harga/Pack</th><th class="num">Omzet</th></tr></thead>
+          <tbody>${entries.map(e => `<tr>
+            <td class="product-name">${e.produk}</td>
+            <td class="num">${fmt(e.pck)}</td>
+            <td class="num">${fmt(e.ecr)}</td>
+            <td class="num">${rp(e.hj_pck)}</td>
+            <td class="num"><span class="badge badge-green">${rp(e.omzet)}</span></td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html || `<div class="empty-state"><div>Tidak ada data sesuai filter</div></div>`;
+}
+
+// ── REKAPAN BULANAN ──
+let bulananPage = 0;
+const BULANAN_PER_PAGE = 30;
+function renderBulanan() {
+  bulananPage = 0;
+  renderBulananPage();
+}
+function renderBulananPage() {
+  const search = document.getElementById('bulanan-search').value.toLowerCase();
+  const sortBy = document.getElementById('bulanan-sort').value;
+
+  // Aggregate per product per month
+  const prodMonthMap = {};
+  for (const d of salesData) {
+    if (!prodMonthMap[d.produk]) prodMonthMap[d.produk] = { pck: Array(12).fill(0), ecr: Array(12).fill(0), omzet: Array(12).fill(0) };
+    prodMonthMap[d.produk].pck[d.bulan] += d.pck || 0;
+    prodMonthMap[d.produk].ecr[d.bulan] += d.ecr || 0;
+    prodMonthMap[d.produk].omzet[d.bulan] += d.omzet || 0;
+  }
+
+  let prods = PRODUCTS.map(p => ({ ...p, ...(prodMonthMap[p.nama] || { pck: Array(12).fill(0), ecr: Array(12).fill(0), omzet: Array(12).fill(0) }) }));
+  if (search) prods = prods.filter(p => p.nama.toLowerCase().includes(search));
+  if (sortBy === 'omzet') prods.sort((a,b) => b.omzet.reduce((s,v)=>s+v,0) - a.omzet.reduce((s,v)=>s+v,0));
+  else if (sortBy === 'qty') prods.sort((a,b) => (b.pck.reduce((s,v)=>s+v,0)+b.ecr.reduce((s,v)=>s+v,0)) - (a.pck.reduce((s,v)=>s+v,0)+a.ecr.reduce((s,v)=>s+v,0)));
+  else prods.sort((a,b) => a.nama.localeCompare(b.nama));
+
+  const total = prods.length;
+  const start = bulananPage * BULANAN_PER_PAGE;
+  const paginated = prods.slice(start, start + BULANAN_PER_PAGE);
+
+  const wrap = document.getElementById('bulanan-table-wrap');
+  if (!prods.length) { wrap.innerHTML = `<div class="empty-state"><div>Tidak ada data</div></div>`; return; }
+
+  const monthCols = MONTH_NAMES.map(m => `<th class="num" style="min-width:90px">${m.substring(0,3)}<br><span style="font-weight:400;font-size:0.74rem">Omzet</span></th>`).join('');
+  const rows = paginated.map((p, i) => {
+    const totalOmzet = p.omzet.reduce((s,v) => s+v, 0);
+    const totalQty = p.pck.reduce((s,v)=>s+v,0) + p.ecr.reduce((s,v)=>s+v,0);
+    const monthCells = p.omzet.map(v => `<td class="num">${v > 0 ? '<span class="badge badge-gold">'+rp(v)+'</span>' : '<span style="color:var(--gray2)">–</span>'}</td>`).join('');
+    return `<tr>
+      <td style="color:var(--gray);font-size:0.8rem">${start+i+1}</td>
+      <td class="product-name">${p.nama}</td>
+      ${monthCells}
+      <td class="num" style="color:var(--gold2);font-weight:700">${fmt(totalQty)}</td>
+      <td class="num" style="color:var(--gold2);font-weight:700">${rp(totalOmzet)}</td>
+    </tr>`;
+  }).join('');
+
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th style="width:40px">No</th>
+      <th style="min-width:220px">Nama Produk</th>
+      ${monthCols}
+      <th class="num">Total Qty</th>
+      <th class="num">Total Omzet</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+
+  // Pagination
+  const pages = Math.ceil(total / BULANAN_PER_PAGE);
+  const pag = document.getElementById('bulanan-pagination');
+  pag.innerHTML = `<span class="page-info">Menampilkan ${start+1}–${Math.min(start+BULANAN_PER_PAGE, total)} dari ${total}</span>` +
+    Array.from({length: pages}, (_, i) =>
+      `<button class="page-btn ${i === bulananPage ? 'active' : ''}" onclick="bulananPage=${i};renderBulananPage()">${i+1}</button>`
+    ).join('');
+}
+
+// ── REKAPAN TAHUNAN ──
+function renderTahunan() {
+  const monthly = aggregateByMonth();
+  const grandTotal = { pck: 0, ecr: 0, qty: 0, omzet: 0 };
+  for (const m of monthly) { grandTotal.pck += m.pck; grandTotal.ecr += m.ecr; grandTotal.qty += m.pck + m.ecr; grandTotal.omzet += m.omzet; }
+
+  // KPIs
+  document.getElementById('tahunan-kpi').innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Total Omzet</div><div class="kpi-value">${rp(grandTotal.omzet)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Qty</div><div class="kpi-value">${fmt(grandTotal.qty)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Rata-rata/Bulan</div><div class="kpi-value">${rp(Math.round(grandTotal.omzet/12))}</div></div>`;
+
+  // Table
+  const tbody = document.getElementById('tahunan-tbody');
+  tbody.innerHTML = monthly.map((m, i) => {
+    const qty = m.pck + m.ecr;
+    const pct = grandTotal.omzet > 0 ? ((m.omzet / grandTotal.omzet) * 100).toFixed(1) : 0;
+    const barWidth = grandTotal.omzet > 0 ? (m.omzet / grandTotal.omzet * 100) : 0;
+    return `<tr>
+      <td class="highlight">${MONTH_NAMES[i]}</td>
+      <td class="num">${fmt(m.pck)}</td>
+      <td class="num">${fmt(m.ecr)}</td>
+      <td class="num">${fmt(qty)}</td>
+      <td class="num">${rp(m.omzet)}</td>
+      <td class="num">
+        <div style="text-align:right;margin-bottom:2px">${pct}%</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${barWidth}%"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tahunan-total-pack').textContent = fmt(grandTotal.pck);
+  document.getElementById('tahunan-total-ecr').textContent = fmt(grandTotal.ecr);
+  document.getElementById('tahunan-total-qty').textContent = fmt(grandTotal.qty);
+  document.getElementById('tahunan-total-omzet').textContent = rp(grandTotal.omzet);
+
+  // Chart
+  destroyChart('chart-tahunan');
+  charts['chart-tahunan'] = new Chart(document.getElementById('chart-tahunan'), {
+    type: 'line',
+    data: {
+      labels: MONTH_NAMES.map(m => m.substring(0,3)),
+      datasets: [{
+        label: 'Omzet (Rp)',
+        data: monthly.map(m => m.omzet),
+        borderColor: 'rgba(201,168,76,0.9)',
+        backgroundColor: 'rgba(201,168,76,0.08)',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: '#C9A84C', pointRadius: 5
+      }]
+    },
+    options: chartOptions('Rp')
+  });
+}
+
+// ── RENDER PRODUK ──
+let produkPage = 0;
+const PRODUK_PER_PAGE = 30;
+function renderProduk() {
+  produkPage = 0;
+  renderProdukPage();
+}
+function renderProdukPage() {
+  const search = document.getElementById('produk-search').value.toLowerCase();
+  let prods = PRODUCTS.filter(p => !search || p.nama.toLowerCase().includes(search));
+  const total = prods.length;
+  const start = produkPage * PRODUK_PER_PAGE;
+  const paginated = prods.slice(start, start + PRODUK_PER_PAGE);
+  const tbody = document.getElementById('produk-tbody');
+  tbody.innerHTML = paginated.map((p, i) => {
+    const margin = p.harga_modal > 0 ? (((p.harga_jual_pck - p.harga_modal) / p.harga_modal) * 100).toFixed(0) : 0;
+    return `<tr>
+      <td style="color:var(--gray);font-size:0.8rem">${start+i+1}</td>
+      <td class="product-name">${p.nama}</td>
+      <td class="num">${rp(p.harga_modal)}</td>
+      <td class="num">${rp(p.harga_jual_pck)}</td>
+      <td class="num">${p.harga_jual_ecr > 0 ? rp(p.harga_jual_ecr) : '–'}</td>
+      <td class="num"><span class="badge badge-green">+${margin}%</span></td>
+    </tr>`;
+  }).join('');
+
+  const pages = Math.ceil(total / PRODUK_PER_PAGE);
+  document.getElementById('produk-pagination').innerHTML =
+    `<span class="page-info">${total} produk</span>` +
+    Array.from({length: pages}, (_, i) =>
+      `<button class="page-btn ${i === produkPage ? 'active' : ''}" onclick="produkPage=${i};renderProdukPage()">${i+1}</button>`
+    ).join('');
+}
+
+// ── ALERT ──
+function showAlert(msg, success = true) {
+  const existing = document.querySelector('.alert');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.className = 'alert ' + (success ? 'alert-success' : '');
+  div.innerHTML = `<div class="alert-text">${msg}</div>`;
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 3000);
+}
+
+// ── EXPORT EXCEL ──
+function exportExcel() {
+  if (!salesData.length) return showAlert('Belum ada data untuk diekspor!', false);
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: All data
+  const allRows = salesData.map(d => ({
+    'Tanggal': d.tanggal,
+    'Bulan': MONTH_NAMES[d.bulan],
+    'Produk': d.produk,
+    'Qty Pack': d.pck,
+    'Qty Eceran': d.ecr,
+    'Total Qty': (d.pck||0) + (d.ecr||0),
+    'Harga Jual Pack': d.hj_pck,
+    'Harga Jual Ecr': d.hj_ecr,
+    'Omzet': d.omzet
+  }));
+  const ws1 = XLSX.utils.json_to_sheet(allRows);
+  XLSX.utils.book_append_sheet(wb, ws1, 'Detail Penjualan');
+
+  // Sheet 2: Monthly summary per product
+  const prodMonthMap = {};
+  for (const d of salesData) {
+    if (!prodMonthMap[d.produk]) prodMonthMap[d.produk] = { pck: Array(12).fill(0), ecr: Array(12).fill(0), omzet: Array(12).fill(0) };
+    prodMonthMap[d.produk].pck[d.bulan] += d.pck || 0;
+    prodMonthMap[d.produk].ecr[d.bulan] += d.ecr || 0;
+    prodMonthMap[d.produk].omzet[d.bulan] += d.omzet || 0;
+  }
+  const monthlyRows = PRODUCTS.map(p => {
+    const m = prodMonthMap[p.nama] || { pck: Array(12).fill(0), ecr: Array(12).fill(0), omzet: Array(12).fill(0) };
+    const row = { 'Produk': p.nama };
+    MONTH_NAMES.forEach((mn, i) => { row[mn] = m.omzet[i]; });
+    row['Total Omzet'] = m.omzet.reduce((s,v)=>s+v,0);
+    row['Total Qty'] = m.pck.reduce((s,v)=>s+v,0) + m.ecr.reduce((s,v)=>s+v,0);
+    return row;
+  });
+  const ws2 = XLSX.utils.json_to_sheet(monthlyRows);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Rekapan Bulanan');
+
+  // Sheet 3: Yearly
+  const monthly = aggregateByMonth();
+  const yearRows = MONTH_NAMES.map((mn, i) => ({
+    'Bulan': mn, 'Total Pack': monthly[i].pck, 'Total Eceran': monthly[i].ecr,
+    'Total Qty': monthly[i].pck + monthly[i].ecr, 'Total Omzet': monthly[i].omzet
+  }));
+  const ws3 = XLSX.utils.json_to_sheet(yearRows);
+  XLSX.utils.book_append_sheet(wb, ws3, 'Rekapan Tahunan');
+
+  XLSX.writeFile(wb, 'QueenPlastic_Penjualan_' + new Date().getFullYear() + '.xlsx');
+  showAlert('Excel berhasil diunduh!', true);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// IMPORT EXCEL
+// ══════════════════════════════════════════════════════════════════════════════
+let importMergeMode = 'merge';
+let importPendingData = null;
+
+function triggerImport() {
+  document.getElementById('import-file-input').value = '';
+  importPendingData = null;
+  document.getElementById('import-status').innerHTML = '<span style="color:var(--gray)">Pilih file Excel terlebih dahulu untuk memulai analisis...</span>';
+  const btn = document.getElementById('btn-confirm-import');
+  btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
+  setMergeMode('merge');
+  document.getElementById('import-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('import-file-input').click(), 100);
+}
+
+function closeImportModal() {
+  document.getElementById('import-modal').style.display = 'none';
+  importPendingData = null;
+}
+
+function setMergeMode(mode) {
+  importMergeMode = mode;
+  document.getElementById('btn-merge').className = mode === 'merge' ? 'btn-gold' : 'btn-outline';
+  document.getElementById('btn-replace').className = mode === 'replace' ? 'btn-gold' : 'btn-outline';
+  document.getElementById('btn-merge').style.flex = '1';
+  document.getElementById('btn-merge').style.fontSize = '0.8rem';
+  document.getElementById('btn-merge').style.padding = '10px';
+  document.getElementById('btn-replace').style.flex = '1';
+  document.getElementById('btn-replace').style.fontSize = '0.8rem';
+  document.getElementById('btn-replace').style.padding = '10px';
+}
+
+function importExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('import-status');
+  statusEl.innerHTML = '<span style="color:var(--gold2)">Membaca file Excel...</span>';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+
+      const sheetMonthMap = {
+        'HARIAN JAN': 0, 'HARIAN FEB': 1, 'HARIAN MAR': 2,
+        'HARIAN APR': 3, 'HARIAN MEI': 4, 'HARIAN JUN': 5,
+        'HARIAN JUL': 6, 'HARIAN AGU': 7, 'HARIAN SEP': 8,
+        'HARIAN OKT': 9, 'HARIAN NOV': 10, 'HARIAN DES': 11
+      };
+
+      const extracted = [];
+      let sheetsFound = 0;
+      let sheetsSkipped = 0;
+
+      // Detect year from sheet title or use current year
+      let importYear = new Date().getFullYear();
+      for (const sName of wb.SheetNames) {
+        const ws = wb.Sheets[sName];
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: 0 });
+        const title = String((raw[0] || [])[0] || '');
+        const m = title.match(/\b(20\d{2})\b/);
+        if (m) { importYear = parseInt(m[1]); break; }
+      }
+
+      for (const [sheetName, monthIdx] of Object.entries(sheetMonthMap)) {
+        if (!wb.SheetNames.includes(sheetName)) { sheetsSkipped++; continue; }
+        sheetsFound++;
+        const ws = wb.Sheets[sheetName];
+        const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: 0 });
+
+        let headerRow = -1, subHeaderRow = -1;
+        for (let r = 0; r < Math.min(5, raw.length); r++) {
+          if (String(raw[r][1] || '').toLowerCase().includes('nama produk')) { headerRow = r; subHeaderRow = r + 1; break; }
+        }
+        if (headerRow < 0) continue;
+
+        const headerCols = raw[headerRow] || [];
+        const subCols = raw[subHeaderRow] || [];
+        const dayCols = [];
+        for (let c = 2; c < headerCols.length - 6; c++) {
+          const dayVal = parseInt(headerCols[c]);
+          if (!isNaN(dayVal) && dayVal >= 1 && dayVal <= 31) {
+            const pckStr = String(subCols[c] || '').toLowerCase();
+            if (pckStr.includes('pck') || pckStr.includes('pack')) {
+              dayCols.push({ day: dayVal, pckCol: c, ecrCol: c + 1 });
+            }
+          }
+        }
+
+        const monthNum = monthIdx + 1;
+        for (let r = subHeaderRow + 1; r < raw.length; r++) {
+          const row = raw[r];
+          const productName = String(row[1] || '').trim().toUpperCase();
+          if (!productName || productName === 'NAN' || productName === '0') continue;
+          const product = PRODUCTS.find(p => p.nama.toUpperCase() === productName);
+          if (!product) continue;
+
+          for (const { day, pckCol, ecrCol } of dayCols) {
+            const pck = parseInt(row[pckCol]) || 0;
+            const ecr = parseInt(row[ecrCol]) || 0;
+            if (pck === 0 && ecr === 0) continue;
+            const tanggal = `${importYear}-${String(monthNum).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const omzet = pck * product.harga_jual_pck + ecr * (product.harga_jual_ecr || product.harga_jual_pck);
+            extracted.push({
+              id: Date.now() + Math.random(),
+              tanggal, bulan: monthIdx,
+              produk: product.nama, pck, ecr,
+              hj_pck: product.harga_jual_pck,
+              hj_ecr: product.harga_jual_ecr || product.harga_jual_pck,
+              omzet
+            });
+          }
+        }
+      }
+
+      importPendingData = extracted;
+
+      const existingKeys = new Set(salesData.map(d => `${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
+      const newEntries = extracted.filter(d => !existingKeys.has(`${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
+      const dupCount = extracted.length - newEntries.length;
+      const totalOmzet = newEntries.reduce((s,d) => s + d.omzet, 0);
+      const months = [...new Set(newEntries.map(d => MONTH_NAMES[d.bulan]))];
+
+      statusEl.innerHTML = sheetsFound === 0
+        ? '<span style="color:var(--danger)">Tidak ada sheet HARIAN yang ditemukan di file ini.</span>'
+        : `<span style="color:var(--success)">File berhasil dibaca (${importYear})</span><br><br>
+           <strong style="color:var(--white)">${extracted.length.toLocaleString('id-ID')}</strong> entri dari <strong style="color:var(--white)">${sheetsFound}</strong> sheet bulan<br>
+           <strong style="color:var(--gold2)">${newEntries.length.toLocaleString('id-ID')}</strong> entri baru &nbsp;·&nbsp;
+           <strong style="color:var(--gray)">${dupCount.toLocaleString('id-ID')}</strong> duplikat dilewati<br>
+           Bulan: <strong style="color:var(--white)">${months.slice(0,6).join(', ')}${months.length > 6 ? '...' : ''}</strong><br>
+           Total omzet baru: <strong style="color:var(--gold2)">${rp(totalOmzet)}</strong>`;
+
+      const btn = document.getElementById('btn-confirm-import');
+      if (sheetsFound > 0 && (newEntries.length > 0 || importMergeMode === 'replace')) {
+        btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+      }
+    } catch(err) {
+      document.getElementById('import-status').innerHTML = `<span style="color:var(--danger)">Gagal membaca file: ${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function confirmImport() {
+  if (!importPendingData) return;
+
+  if (importMergeMode === 'replace') {
+    salesData = importPendingData.map(d => ({...d, id: Date.now() + Math.random()}));
+  } else {
+    // Merge: skip duplicates
+    const existingKeys = new Set(salesData.map(d => `${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
+    const newEntries = importPendingData.filter(d => !existingKeys.has(`${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
+    salesData = [...salesData, ...newEntries];
+  }
+
+  saveData();
+  closeImportModal();
+  renderDashboard();
+  showAlert(`Import berhasil! ${salesData.length.toLocaleString('id-ID')} entri tersimpan.`, true);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOGO MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+const LOGO_KEY = 'qp_logo';
+let pendingLogoData = null;
+
+function loadLogo() {
+  const saved = localStorage.getItem(LOGO_KEY);
+  if (saved) applyLogoToPage(saved);
+}
+
+function applyLogoToPage(src) {
+  const img = document.getElementById('brand-logo');
+  const fallback = document.getElementById('brand-logo-fallback');
+  if (!src) {
+    img.style.display = 'none';
+    fallback.style.display = 'flex';
+    return;
+  }
+  img.src = src;
+  img.style.display = 'block';
+  fallback.style.display = 'none';
+}
+
+function openLogoSettings() {
+  const current = localStorage.getItem(LOGO_KEY) || '';
+  document.getElementById('logo-url-input').value = current.startsWith('data:') ? '' : current;
+  document.getElementById('logo-preview').src = current;
+  document.getElementById('logo-file-input').value = '';
+  pendingLogoData = current || null;
+  document.getElementById('logo-modal').style.display = 'flex';
+}
+
+function closeLogoModal() {
+  document.getElementById('logo-modal').style.display = 'none';
+  pendingLogoData = null;
+}
+
+function previewLogoFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingLogoData = e.target.result;
+    document.getElementById('logo-preview').src = pendingLogoData;
+    document.getElementById('logo-url-input').value = '';
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewLogoUrl(url) {
+  pendingLogoData = url;
+  document.getElementById('logo-preview').src = url;
+}
+
+function applyLogo() {
+  const urlInput = document.getElementById('logo-url-input').value.trim();
+  const finalSrc = urlInput || pendingLogoData || '';
+  if (finalSrc) {
+    localStorage.setItem(LOGO_KEY, finalSrc);
+    applyLogoToPage(finalSrc);
+    showAlert('Logo berhasil disimpan!', true);
+  }
+  closeLogoModal();
+}
+
+function removeLogo() {
+  localStorage.removeItem(LOGO_KEY);
+  applyLogoToPage('');
+  closeLogoModal();
+  showAlert('Logo dihapus.', true);
+}
+
+// ── INIT ──
+loadData();
+loadLogo();
+// Init sync indicator
+if (GAS_URL) {
+  updateSyncIndicator('idle', 'Terhubung ke Google Sheets');
+} else {
+  updateSyncIndicator('idle', 'Google Sheets belum dikonfigurasi');
+}
+// Set default tanggal ke hari ini
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('inp-tanggal').value = today;
+const todayMonth = new Date().getMonth();
+document.getElementById('inp-bulan').value = todayMonth;
+// Init month tabs for harian
+document.getElementById('harian-month-tabs').innerHTML = MONTH_NAMES.map((m, i) =>
+  `<button class="month-tab ${i === harianMonth ? 'active' : ''}" onclick="setHarianMonth(${i})">${m.substring(0,3)}</button>`
+).join('');
+renderDashboard();
+renderProduk();
+</script>
+</body>
+</html>
