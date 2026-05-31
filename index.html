@@ -448,7 +448,8 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   </nav>
   <div class="topbar-actions">
     <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
-    <button class="btn-outline" onclick="resetAndPull()" title="Hapus data lokal lalu ambil dari Google Sheets" style="border-color:rgba(239,154,154,0.4);color:#EF9A9A;">Reset & Pull</button>
+    <button class="btn-outline" onclick="pullFromSheets()" title="Ambil data terbaru dari Google Sheets" style="font-size:0.8rem;">🔄 Sync</button>
+    <button class="btn-outline" onclick="resetAndPull()" title="Reset & ambil ulang dari Google Sheets" style="border-color:rgba(239,154,154,0.4);color:#EF9A9A;font-size:0.8rem;">↺ Reset</button>
     <button class="btn-gold" onclick="showPage('input')">+ Input Penjualan</button>
   </div>
 </div>
@@ -659,7 +660,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
       <thead><tr>
         <th>No</th><th>Nama Produk</th>
         <th class="num">Harga Modal</th><th class="num">Harga Jual (Pack)</th>
-        <th class="num">Harga Jual (Ecr)</th><th class="num">Margin Pack</th><th></th>
+        <th class="num">Harga Jual (Ecr)</th><th class="num">Isi/Pack</th><th class="num">Margin</th><th></th>
       </tr></thead>
       <tbody id="produk-tbody"></tbody>
     </table>
@@ -979,6 +980,7 @@ function applyProductPrices(incoming) {
       harga_modal:    Number(s.harga_modal)    || p.harga_modal,
       harga_jual_pck: Number(s.harga_jual_pck) || p.harga_jual_pck,
       harga_jual_ecr: Number(s.harga_jual_ecr) || 0,
+      isi_per_pack:   Number(s.isi_per_pack)   || p.isi_per_pack || 0,
     };
   });
   saveProductPrices();
@@ -990,16 +992,187 @@ function applyProductPrices(incoming) {
 // ══════════════════════════════════════════════════════════════════════════════
 const STORAGE_KEY = 'qp_sales_2026';
 
-// ⬇️  LANGKAH SETUP:
-// 1. Buka Google Sheets Anda → Extensions → Apps Script
-// 2. Paste isi file google_apps_script.js → Save → Deploy → Copy URL
-// 3. Tempel URL di bawah ini:
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby0RVrvRAsTySEgTVooQzmXSU7gAOqz1I9U3ytyeMbR5E98l9Zn1kXgpVobL6K-l7Yn/exec';
+// GAS URL untuk MENULIS data (input penjualan, produk, stok)
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsPob7tftr1qLAs_hznn5j8OIQYhxU4d9LORw9-4UGcU1POqscknHxXLl9PKbinrkC/exec';
 
-// URL CSV publik Google Sheets (untuk membaca data)
-const GSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHpDwyQh5xoX9Qwto9MG_s729naBRsVkcRbg8l8zZcpeShxtzsctiNLTNNFB7HCzRyxw1LnGXuVe9E/pub?output=csv&gid=991961989';
+// ── CSV URLs untuk MEMBACA data real-time dari Google Sheets ──
+const SPREADSHEET_ID = '1FBeWRu4dp9cF705x1mLcC3ZVmKboa80UbYu8_Z_gLBU';
+const CSV_BASE = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/pub?single=true&output=csv`;
+const CSV_URLS = {
+  masterProduk:    CSV_BASE + '&gid=1832736527',
+  detailPenjualan: CSV_BASE + '&gid=992584034',
+  stokProduk:      CSV_BASE + '&gid=807594284',
+  riwayatStok:     CSV_BASE + '&gid=842573141',
+};
+
+// Auto-refresh interval (menit)
+const AUTO_REFRESH_MENIT = 5;
 
 let gsyncStatus = 'idle'; // idle | syncing | error | ok
+let autoRefreshTimer = null;
+
+// ── Helper: Parse CSV string ke array of objects ──
+function parseCSV(text) {
+  const lines = text.trim().split('\n').map(l => {
+    // Handle quoted fields with commas
+    const result = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < l.length; i++) {
+      if (l[i] === '"') { inQ = !inQ; }
+      else if (l[i] === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+      else { cur += l[i]; }
+    }
+    result.push(cur.trim());
+    return result;
+  });
+  if (lines.length < 2) return [];
+  const headers = lines[0].map(h => h.toLowerCase().trim());
+  return lines.slice(1).filter(r => r.some(c => c)).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (row[i] || '').trim(); });
+    return obj;
+  });
+}
+
+// ── Helper: bersihkan angka dari format Rp currency ──
+function cleanNum(val) {
+  if (typeof val === 'number') return val;
+  return Number(String(val).replace(/[^0-9]/g, '')) || 0;
+}
+
+// ── Fetch CSV dari Google Sheets ──
+async function fetchCSV(url) {
+  const res = await fetch(url + '&t=' + Date.now());
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.text();
+}
+
+// ── Fetch & update Master Produk dari CSV ──
+async function fetchMasterProduk() {
+  try {
+    const text = await fetchCSV(CSV_URLS.masterProduk);
+    const rows = parseCSV(text);
+    if (!rows.length) return 0;
+    let updated = 0;
+    const map = {};
+    rows.forEach(r => {
+      const nama = (r['nama produk'] || r['nama'] || '').trim().toUpperCase();
+      if (!nama) return;
+      map[nama] = {
+        nama,
+        harga_modal:    cleanNum(r['harga modal'] || r['modal'] || 0),
+        harga_jual_pck: cleanNum(r['harga jual pack'] || r['harga jual pck'] || r['pack'] || 0),
+        harga_jual_ecr: cleanNum(r['harga jual ecr'] || r['ecr'] || r['eceran'] || 0),
+        isi_per_pack:   cleanNum(r['isi per pack'] || r['isi_per_pack'] || r['isi'] || 0),
+      };
+    });
+    PRODUCTS = PRODUCTS.map(p => {
+      const key = p.nama.toUpperCase();
+      if (!map[key]) return p;
+      updated++;
+      return { ...p, ...map[key], nama: p.nama };
+    });
+    saveProductPrices();
+    return updated;
+  } catch(e) { console.warn('fetchMasterProduk error:', e.message); return 0; }
+}
+
+// ── Fetch & update Detail Penjualan dari CSV ──
+async function fetchDetailPenjualan() {
+  try {
+    const text = await fetchCSV(CSV_URLS.detailPenjualan);
+    const rows = parseCSV(text);
+    if (!rows.length) return 0;
+    const BULAN_MAP = {};
+    MONTH_NAMES.forEach((m, i) => { BULAN_MAP[m] = i; });
+    const parsed = rows
+      .map(r => {
+        const tanggal = (r['tanggal'] || '').trim();
+        const bulanNama = (r['bulan'] || '').toUpperCase().trim();
+        const bulan = BULAN_MAP[bulanNama] !== undefined ? BULAN_MAP[bulanNama] : -1;
+        if (!tanggal || !r['produk'] || bulan < 0) return null;
+        return {
+          id:      Date.now() + Math.random(),
+          tanggal,
+          bulan,
+          produk:  r['produk'].trim(),
+          pck:     cleanNum(r['qty pack'] || r['pck'] || 0),
+          ecr:     cleanNum(r['qty eceran'] || r['ecr'] || 0),
+          hj_pck:  cleanNum(r['harga jual pack'] || r['hj_pck'] || 0),
+          hj_ecr:  cleanNum(r['harga jual ecr'] || r['hj_ecr'] || 0),
+          omzet:   cleanNum(r['omzet'] || 0),
+        };
+      })
+      .filter(Boolean);
+    if (!parsed.length) return 0;
+    salesData = parsed;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
+    return parsed.length;
+  } catch(e) { console.warn('fetchDetailPenjualan error:', e.message); return 0; }
+}
+
+// ── Fetch & update Stok dari CSV ──
+async function fetchStokCSV() {
+  try {
+    const textStok = await fetchCSV(CSV_URLS.stokProduk);
+    const rowsStok = parseCSV(textStok);
+    rowsStok.forEach(r => {
+      const nama = (r['nama produk'] || r['nama'] || '').trim();
+      if (!nama) return;
+      stokData[nama] = {
+        masuk:   cleanNum(r['stok masuk total'] || r['masuk'] || 0),
+        minimum: cleanNum(r['min stok'] || r['minimum'] || 5),
+      };
+    });
+    try { localStorage.setItem(STOK_KEY, JSON.stringify(stokData)); } catch(e) {}
+
+    const textRiwayat = await fetchCSV(CSV_URLS.riwayatStok);
+    const rowsRiwayat = parseCSV(textRiwayat);
+    const fetched = rowsRiwayat
+      .filter(r => r['tanggal'] && r['produk'])
+      .map((r, i) => ({
+        id:         Date.now() + i,
+        tanggal:    r['tanggal'].trim(),
+        produk:     r['produk'].trim(),
+        jumlah:     cleanNum(r['jumlah masuk'] || r['jumlah'] || 0),
+        keterangan: r['keterangan'] || '',
+      }));
+    if (fetched.length) {
+      riwayatStok = fetched;
+      try { localStorage.setItem(RIWAYAT_KEY, JSON.stringify(riwayatStok)); } catch(e) {}
+    }
+  } catch(e) { console.warn('fetchStokCSV error:', e.message); }
+}
+
+// ── Pull semua data dari CSV ──
+async function pullFromCSV(silent) {
+  updateSyncIndicator('syncing', 'Mengambil data dari Google Sheets...');
+  try {
+    const [nProduk, nSales] = await Promise.all([
+      fetchMasterProduk(),
+      fetchDetailPenjualan(),
+    ]);
+    await fetchStokCSV();
+    renderDashboard();
+    renderRecent();
+    renderProduk();
+    renderStok();
+    renderStokKPI();
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    updateSyncIndicator('ok', `✅ Update ${now} · ${nSales} transaksi`);
+    setTimeout(() => updateSyncIndicator('idle', 'Auto-sync aktif'), 4000);
+    if (!silent) showAlert(`✅ Data berhasil diperbarui! ${nSales} transaksi.`, true);
+  } catch(e) {
+    updateSyncIndicator('error', 'Gagal fetch: ' + e.message);
+    if (!silent) showAlert('❌ Gagal mengambil data: ' + e.message, false);
+  }
+}
+
+// ── Auto-refresh setiap N menit ──
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => pullFromCSV(true), AUTO_REFRESH_MENIT * 60 * 1000);
+}
 
 function updateSyncIndicator(status, msg) {
   gsyncStatus = status;
@@ -1050,74 +1223,9 @@ async function pushToSheets() {
   }
 }
 
-// ── PULL dari Google Sheets (via GAS) ──
+// ── PULL dari Google Sheets (via CSV - real-time) ──
 async function pullFromSheets() {
-  if (!GAS_URL) {
-    showAlert('❌ GAS_URL belum diisi!', false);
-    return;
-  }
-  updateSyncIndicator('syncing', 'Mengambil data dari Google Sheets...');
-  try {
-    // Tarik semua data penjualan + harga produk sekaligus
-    const res = await fetch(GAS_URL + '?action=readAll&t=' + Date.now());
-    const json = await res.json();
-
-    if (json.status !== 'ok') {
-      updateSyncIndicator('error', 'Gagal: ' + (json.message || 'unknown'));
-      return;
-    }
-
-    // ── Sync harga produk ──
-    if (json.products && json.products.length) {
-      const n = applyProductPrices(json.products);
-      if (n > 0) {
-        renderProduk();
-        showAlert(`✅ Harga ${n} produk diperbarui!`, true);
-      }
-    }
-
-    // ── Sync data stok ──
-    if (json.stok) {
-      if (json.stok.stokData && Object.keys(json.stok.stokData).length) {
-        stokData = json.stok.stokData;
-        try { localStorage.setItem(STOK_KEY, JSON.stringify(stokData)); } catch(e) {}
-      }
-      if (json.stok.riwayatStok && json.stok.riwayatStok.length) {
-        riwayatStok = json.stok.riwayatStok;
-        try { localStorage.setItem(RIWAYAT_KEY, JSON.stringify(riwayatStok)); } catch(e) {}
-      }
-    }
-
-    // ── Sync data penjualan ──
-    if (json.salesData && json.salesData.length) {
-      // Ganti seluruh data lokal dengan data dari Sheets (master of truth)
-      salesData = json.salesData.map(d => ({
-        id:      d.id || (Date.now() + Math.random()),
-        tanggal: d.tanggal || '',
-        bulan:   parseInt(d.bulan) >= 0 ? parseInt(d.bulan) : MONTH_NAMES.indexOf((d.bulanNama||'').toUpperCase()),
-        produk:  d.produk || '',
-        pck:     parseInt(d.pck)    || 0,
-        ecr:     parseInt(d.ecr)    || 0,
-        hj_pck:  parseInt(d.hj_pck) || 0,
-        hj_ecr:  parseInt(d.hj_ecr) || 0,
-        omzet:   parseInt(d.omzet)  || 0,
-      })).filter(d => d.produk && d.tanggal);
-
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
-      renderDashboard();
-      renderRecent();
-      updateSyncIndicator('ok', `✅ ${salesData.length} data berhasil disinkron`);
-      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
-      showAlert(`✅ ${salesData.length} data berhasil ditarik dari Google Sheets!`, true);
-    } else {
-      updateSyncIndicator('ok', 'Google Sheets belum ada data penjualan');
-      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
-    }
-
-  } catch(e) {
-    updateSyncIndicator('error', 'Gagal terhubung ke Apps Script');
-    showAlert('❌ Gagal Pull: ' + e.message, false);
-  }
+  await pullFromCSV(false);
 }
 
 // ── BUILD SUMMARY untuk ditulis ke Sheets ──
@@ -1609,12 +1717,20 @@ function renderProdukPage() {
   const tbody = document.getElementById('produk-tbody');
   tbody.innerHTML = paginated.map((p, i) => {
     const margin = p.harga_modal > 0 ? (((p.harga_jual_pck - p.harga_modal) / p.harga_modal) * 100).toFixed(0) : 0;
+    const adaEcr = p.harga_jual_ecr > 0;
+    const adaPck = p.harga_jual_pck > 0;
+    const jenisBadge = adaEcr && adaPck
+      ? `<span style="font-size:0.7rem;padding:2px 6px;border-radius:8px;background:rgba(201,168,76,0.15);color:var(--gold2)">Pack+Ecr</span>`
+      : adaPck ? `<span style="font-size:0.7rem;padding:2px 6px;border-radius:8px;background:rgba(129,199,132,0.15);color:#81C784">Pack</span>`
+               : `<span style="font-size:0.7rem;padding:2px 6px;border-radius:8px;background:rgba(100,181,246,0.15);color:#64B5F6">Eceran</span>`;
+    const isiLabel = p.isi_per_pack > 0 ? `<span style="font-size:0.72rem;color:var(--gray)">${p.isi_per_pack}/pack</span>` : '<span style="color:var(--gray2)">–</span>';
     return `<tr>
       <td style="color:var(--gray);font-size:0.8rem">${start+i+1}</td>
-      <td class="product-name">${p.nama}</td>
+      <td class="product-name">${p.nama}<br>${jenisBadge}</td>
       <td class="num">${rp(p.harga_modal)}</td>
       <td class="num" style="color:var(--gold2);font-weight:600">${rp(p.harga_jual_pck)}</td>
-      <td class="num" style="color:var(--gold2)">${p.harga_jual_ecr > 0 ? rp(p.harga_jual_ecr) : '<span style="color:var(--gray)">–</span>'}</td>
+      <td class="num" style="color:var(--gold2)">${adaEcr ? rp(p.harga_jual_ecr) : '<span style="color:var(--gray)">–</span>'}</td>
+      <td class="num">${isiLabel}</td>
       <td class="num"><span class="badge badge-green">+${margin}%</span></td>
       <td><button onclick="openEditHarga1('${p.nama.replace(/'/g,"&#39;")}')" style="background:none;border:1px solid rgba(201,168,76,0.3);color:var(--gold2);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.76rem;font-family:'DM Sans',sans-serif;">Edit</button></td>
     </tr>`;
@@ -1870,8 +1986,8 @@ async function pushProductsToSheets() {
 // ── RESET lokal & Pull dari Sheets ──
 async function resetAndPull() {
   const konfirm = confirm(
-    '⚠️ RESET & PULL\n\n' +
-    'Ini akan MENGHAPUS semua data lokal di perangkat ini\n' +
+    '⚠️ Refresh\n\n' +
+    'Ini akan menghapus semua data lokal di perangkat ini\n' +
     'dan menggantinya dengan data dari Google Sheets.\n\n' +
     'Lanjutkan?'
   );
@@ -1911,13 +2027,42 @@ function saveStok() {
   if (GAS_URL) pushStokToSheets();
 }
 
-// ── Hitung sisa stok per produk ──
+// ── Hitung sisa stok per produk (dalam satuan ECERAN) ──
 function getSisaStok(namaProduk) {
-  const masuk   = (stokData[namaProduk] || {}).masuk || 0;
+  const masuk = (stokData[namaProduk] || {}).masuk || 0;
+  const produk = PRODUCTS.find(p => p.nama === namaProduk);
+  const isiPerPack = (produk && produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
+  const adaEcr = produk && produk.harga_jual_ecr > 0;
+  const adaPck = produk && produk.harga_jual_pck > 0;
+
+  // Hitung total keluar dalam satuan eceran
   const terjual = salesData
     .filter(d => d.produk === namaProduk)
-    .reduce((s, d) => s + (d.pck || 0) + (d.ecr || 0), 0);
+    .reduce((s, d) => {
+      // Pack -> konversi ke eceran
+      const keluarEcr = (adaEcr || !adaPck) ? (d.ecr || 0) : 0;
+      const keluarPck = adaPck ? (d.pck || 0) * isiPerPack : (d.pck || 0);
+      return s + keluarPck + keluarEcr;
+    }, 0);
+
   return masuk - terjual;
+}
+
+// ── Hitung sisa stok dalam satuan pack (helper display) ──
+function getSisaStokPack(namaProduk) {
+  const produk = PRODUCTS.find(p => p.nama === namaProduk);
+  const isiPerPack = (produk && produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
+  const sisaEcr = getSisaStok(namaProduk);
+  return isiPerPack > 1 ? Math.floor(sisaEcr / isiPerPack) : sisaEcr;
+}
+
+// ── Label satuan stok ──
+function getSatuanStok(namaProduk) {
+  const produk = PRODUCTS.find(p => p.nama === namaProduk);
+  if (!produk) return 'pcs';
+  if (produk.harga_jual_ecr > 0 && produk.harga_jual_pck > 0) return 'pcs';
+  if (produk.harga_jual_pck > 0 && produk.isi_per_pack > 1) return 'pcs';
+  return 'pcs';
 }
 
 function getMinStok(namaProduk) {
@@ -2057,20 +2202,29 @@ function renderStok() {
     habis: `<span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:0.75rem;font-weight:600;background:rgba(229,57,53,0.15);color:#EF9A9A;">❌ Habis</span>`
   };
 
-  tbody.innerHTML = slice.map((p, i) => `
-    <tr style="${p.status === 'habis' ? 'background:rgba(229,57,53,0.05)' : p.status === 'tipis' ? 'background:rgba(201,168,76,0.05)' : ''}">
+  tbody.innerHTML = slice.map((p, i) => {
+    const prod = PRODUCTS.find(x => x.nama === p.nama);
+    const isiPack = prod && prod.isi_per_pack > 0 ? prod.isi_per_pack : null;
+    const adaEcr = prod && prod.harga_jual_ecr > 0;
+    const adaPck = prod && prod.harga_jual_pck > 0;
+    const jenis = adaEcr && adaPck ? 'Pack+Ecr' : adaPck ? 'Pack' : 'Eceran';
+    const infoIsi = isiPack ? `<br><span style="font-size:0.72rem;color:var(--gray)">isi ${isiPack}/pack</span>` : '';
+    const sisaNilai = Math.max(0, p.sisa);
+    const packInfo = isiPack && isiPack > 1 ? ` <span style="color:var(--gray);font-size:0.75rem">(~${Math.floor(sisaNilai/isiPack)} pack)</span>` : '';
+    return `<tr style="${p.status === 'habis' ? 'background:rgba(229,57,53,0.05)' : p.status === 'tipis' ? 'background:rgba(201,168,76,0.05)' : ''}">
       <td>${(stokPage - 1) * STOK_PER_PAGE + i + 1}</td>
-      <td class="product-name">${p.nama}</td>
-      <td class="num">${fmt(p.masuk)}</td>
+      <td class="product-name">${p.nama}${infoIsi}</td>
+      <td class="num"><span style="font-size:0.75rem;color:var(--gray)">${jenis}</span> ${fmt(p.masuk)}</td>
       <td class="num">${fmt(Math.max(0, p.terjual))}</td>
-      <td class="num" style="font-weight:700;color:${p.sisa <= 0 ? '#EF9A9A' : p.sisa <= p.min ? 'var(--gold2)' : '#81C784'}">${fmt(p.sisa)}</td>
+      <td class="num" style="font-weight:700;color:${p.sisa <= 0 ? '#EF9A9A' : p.sisa <= p.min ? 'var(--gold2)' : '#81C784'}">${fmt(sisaNilai)} pcs${packInfo}</td>
       <td class="num">${fmt(p.min)}</td>
       <td>${statusBadge[p.status]}</td>
       <td>
-        <button class="btn-gold" onclick="quickTambahStok('${p.nama.replace(/'/g,"\\'")}', ${p.min})"
+        <button class="btn-gold" onclick="quickTambahStok('${p.nama.replace(/'/g, "\\'")}', ${p.min})"
           style="padding:4px 10px;font-size:0.75rem">+ Stok</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   // Pagination
   const pag = document.getElementById('stok-pagination');
@@ -2150,9 +2304,6 @@ function cekNotifikasiStok() {
   }
 }
 
-// Load stok saat init
-loadStok();
-
 // Set default tanggal stok
 document.getElementById('stok-tanggal').value = new Date().toISOString().split('T')[0];
 
@@ -2170,12 +2321,12 @@ const _origShowPage = showPage;
 
 loadData();
 loadLogo();
-// Init sync indicator
-if (GAS_URL) {
-  updateSyncIndicator('idle', 'Terhubung ke Google Sheets');
-} else {
-  updateSyncIndicator('idle', 'Google Sheets belum dikonfigurasi');
-}
+loadStok();
+// Init sync indicator & auto fetch
+updateSyncIndicator('syncing', 'Memuat data dari Google Sheets...');
+pullFromCSV(true).then(() => {
+  startAutoRefresh();
+});
 // Set default tanggal ke hari ini
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('inp-tanggal').value = today;
