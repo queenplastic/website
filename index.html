@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Queen Plastic - Dashboard Penjualan</title>
+<title>Queen Plastic – Dashboard Penjualan</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -444,6 +444,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <button class="nav-btn" onclick="showPage('bulanan')">Rekapan Bulanan</button>
     <button class="nav-btn" onclick="showPage('tahunan')">Rekapan Tahunan</button>
     <button class="nav-btn" onclick="showPage('produk')">Produk</button>
+    <button class="nav-btn" onclick="showPage('stok')">Stok</button>
   </nav>
   <div class="topbar-actions">
     <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
@@ -666,6 +667,118 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   <div class="pagination" id="produk-pagination"></div>
 </div>
 
+<!-- PAGE: STOK -->
+<div id="page-stok" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Manajemen Stok</h2><div class="subtitle">Input stok masuk & pantau sisa stok</div></div>
+  </div>
+
+  <!-- KPI Stok -->
+  <div class="kpi-grid" style="margin-bottom:20px">
+    <div class="kpi-card"><div class="kpi-label">Total Produk</div><div class="kpi-value" id="stok-kpi-total">0</div><div class="kpi-sub">produk terdaftar</div></div>
+    <div class="kpi-card"><div class="kpi-label">Stok Aman</div><div class="kpi-value" id="stok-kpi-aman" style="color:#81C784">0</div><div class="kpi-sub">produk</div></div>
+    <div class="kpi-card"><div class="kpi-label">Stok Menipis</div><div class="kpi-value" id="stok-kpi-tipis" style="color:var(--gold2)">0</div><div class="kpi-sub">perlu restock</div></div>
+    <div class="kpi-card"><div class="kpi-label">Stok Habis</div><div class="kpi-value" id="stok-kpi-habis" style="color:#EF9A9A">0</div><div class="kpi-sub">produk</div></div>
+  </div>
+
+  <!-- Form Input Stok Masuk -->
+  <div class="form-card" style="margin-bottom:20px">
+    <h3>📥 Input Stok Masuk</h3>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Tanggal *</label>
+        <input type="date" id="stok-tanggal" />
+      </div>
+      <div class="form-group">
+        <label>Nama Produk *</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="stok-produk" placeholder="Ketik nama produk..." autocomplete="off" oninput="showStokAutocomplete(this.value)" />
+          <div class="autocomplete-list" id="stok-autocomplete-list" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Jumlah Masuk (Pack) *</label>
+        <input type="number" id="stok-masuk" value="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Batas Minimum Stok</label>
+        <input type="number" id="stok-minimum" value="5" min="0" placeholder="Default: 5" />
+      </div>
+      <div class="form-group">
+        <label>Keterangan</label>
+        <input type="text" id="stok-keterangan" placeholder="Contoh: Restock dari supplier..." />
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-outline" onclick="clearStokForm()">Bersihkan</button>
+      <button class="btn-gold" onclick="saveStokMasuk()">💾 Simpan Stok Masuk</button>
+    </div>
+  </div>
+
+  <!-- Filter & Tabel Stok -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Cari Produk</label>
+      <input type="text" id="stok-search" placeholder="Filter produk..." oninput="renderStok()" />
+    </div>
+    <div class="filter-group">
+      <label>Filter Status</label>
+      <select id="stok-filter-status" onchange="renderStok()">
+        <option value="all">Semua</option>
+        <option value="aman">Stok Aman</option>
+        <option value="tipis">Stok Menipis</option>
+        <option value="habis">Stok Habis</option>
+      </select>
+    </div>
+    <div class="filter-group" style="margin-left:auto;justify-content:flex-end;">
+      <label style="opacity:0">.</label>
+      <button class="btn-outline" onclick="showRiwayatStok()">📋 Riwayat Masuk</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>No</th>
+        <th>Nama Produk</th>
+        <th class="num">Stok Masuk</th>
+        <th class="num">Terjual</th>
+        <th class="num">Sisa Stok</th>
+        <th class="num">Min. Stok</th>
+        <th>Status</th>
+        <th>Aksi</th>
+      </tr></thead>
+      <tbody id="stok-tbody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="stok-pagination"></div>
+</div>
+
+<!-- MODAL RIWAYAT STOK MASUK -->
+<div id="riwayat-stok-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:var(--black2);border:1px solid var(--gold);border-radius:16px;padding:28px;max-width:680px;width:95%;max-height:85vh;overflow-y:auto;box-shadow:0 16px 60px rgba(0,0,0,0.7);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:4px;height:36px;background:linear-gradient(to bottom,var(--gold),var(--gold3));border-radius:2px;"></div>
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--gold2);font-weight:700;">Riwayat Stok Masuk</div>
+          <div style="font-size:0.78rem;color:var(--gray);">Semua catatan penambahan stok</div>
+        </div>
+      </div>
+      <button class="btn-outline" onclick="document.getElementById('riwayat-stok-modal').style.display='none'">✕ Tutup</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Tanggal</th><th>Produk</th><th class="num">Jumlah</th><th>Keterangan</th><th>Aksi</th>
+        </tr></thead>
+        <tbody id="riwayat-stok-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT HARGA MODAL (SATU PRODUK) -->
 <div id="edit-harga1-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
   <div style="background:var(--black2);border:1px solid var(--gold);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 16px 60px rgba(0,0,0,0.7);">
@@ -802,6 +915,10 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <span class="mnav-icon">📦</span>
     <span class="mnav-label">Produk</span>
   </button>
+  <button class="mobile-nav-btn" data-page="stok" onclick="showPage('stok');setMobileActive(this)">
+    <span class="mnav-icon">🗃️</span>
+    <span class="mnav-label">Stok</span>
+  </button>
 </nav>
 
 
@@ -877,7 +994,7 @@ const STORAGE_KEY = 'qp_sales_2026';
 // 1. Buka Google Sheets Anda → Extensions → Apps Script
 // 2. Paste isi file google_apps_script.js → Save → Deploy → Copy URL
 // 3. Tempel URL di bawah ini:
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw9o99F52syZ60sd8_W74r0_csyFIxbbhX9Fxo_mHYXreWG2esdu0sOVRlmhrLD-cg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwuw_e9kKCE7Sw7813x8Pr5-A1pC9eHcz7I1aPsR-yykkcJcjvDzJR-JMkfHxOHS0Q0/exec';
 
 // URL CSV publik Google Sheets (untuk membaca data)
 const GSHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHpDwyQh5xoX9Qwto9MG_s729naBRsVkcRbg8l8zZcpeShxtzsctiNLTNNFB7HCzRyxw1LnGXuVe9E/pub?output=csv&gid=991961989';
@@ -933,59 +1050,73 @@ async function pushToSheets() {
   }
 }
 
-// ── PULL dari Google Sheets (baca CSV publik) ──
+// ── PULL dari Google Sheets (via GAS) ──
 async function pullFromSheets() {
-  updateSyncIndicator('syncing', 'Membaca dari Google Sheets...');
-  // Tarik harga produk terbaru dari GAS (action=readProducts)
-  if (GAS_URL) {
-    try {
-      const rp = await fetch(GAS_URL + '?action=readProducts&t=' + Date.now());
-      const jp = await rp.json();
-      if (jp.status === 'ok' && jp.products && jp.products.length) {
-        const n = applyProductPrices(jp.products);
-        if (n > 0) {
-          renderProduk();
-          showAlert(`✅ Harga ${n} produk diperbarui dari Google Sheets!`, true);
-        }
-      }
-    } catch(e) { /* abaikan jika gagal, lanjut tarik data penjualan */ }
+  if (!GAS_URL) {
+    showAlert('❌ GAS_URL belum diisi!', false);
+    return;
   }
+  updateSyncIndicator('syncing', 'Mengambil data dari Google Sheets...');
   try {
-    const res = await fetch(GSHEET_CSV_URL + '&t=' + Date.now());
-    const text = await res.text();
-    const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+    // Tarik semua data penjualan + harga produk sekaligus
+    const res = await fetch(GAS_URL + '?action=readAll&t=' + Date.now());
+    const json = await res.json();
 
-    // Parse CSV: format kolom = tanggal,bulan,produk,pck,ecr,hj_pck,hj_ecr,omzet
-    // Sheet Detail Penjualan (mulai baris setelah header)
-    const dataRows = rows.filter(r => r[0] && r[0].match(/^\d{4}-\d{2}-\d{2}$/));
-    if (dataRows.length === 0) {
-      updateSyncIndicator('ok', 'Google Sheets kosong (belum ada data penjualan)');
-      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
+    if (json.status !== 'ok') {
+      updateSyncIndicator('error', 'Gagal: ' + (json.message || 'unknown'));
       return;
     }
 
-    const pulled = dataRows.map(r => ({
-      id: Date.now() + Math.random(),
-      tanggal: r[0],
-      bulan: MONTH_NAMES.indexOf((r[1]||'').toUpperCase()),
-      produk: r[2] || '',
-      pck: parseInt(r[3]) || 0,
-      ecr: parseInt(r[4]) || 0,
-      hj_pck: parseInt(r[5]) || 0,
-      hj_ecr: parseInt(r[6]) || 0,
-      omzet: parseInt(r[7]) || 0,
-    })).filter(d => d.bulan >= 0 && d.produk);
+    // ── Sync harga produk ──
+    if (json.products && json.products.length) {
+      const n = applyProductPrices(json.products);
+      if (n > 0) {
+        renderProduk();
+        showAlert(`✅ Harga ${n} produk diperbarui!`, true);
+      }
+    }
 
-    const existingKeys = new Set(salesData.map(d => `${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
-    const newEntries = pulled.filter(d => !existingKeys.has(`${d.tanggal}|${d.produk}|${d.pck}|${d.ecr}`));
-    salesData = [...salesData, ...newEntries];
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
-    renderDashboard();
-    updateSyncIndicator('ok', `Berhasil tarik ${newEntries.length} entri baru`);
-    setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
-    if (newEntries.length > 0) showAlert(` ${newEntries.length} data baru dari Google Sheets!`, true);
+    // ── Sync data stok ──
+    if (json.stok) {
+      if (json.stok.stokData && Object.keys(json.stok.stokData).length) {
+        stokData = json.stok.stokData;
+        try { localStorage.setItem(STOK_KEY, JSON.stringify(stokData)); } catch(e) {}
+      }
+      if (json.stok.riwayatStok && json.stok.riwayatStok.length) {
+        riwayatStok = json.stok.riwayatStok;
+        try { localStorage.setItem(RIWAYAT_KEY, JSON.stringify(riwayatStok)); } catch(e) {}
+      }
+    }
+
+    // ── Sync data penjualan ──
+    if (json.salesData && json.salesData.length) {
+      // Ganti seluruh data lokal dengan data dari Sheets (master of truth)
+      salesData = json.salesData.map(d => ({
+        id:      d.id || (Date.now() + Math.random()),
+        tanggal: d.tanggal || '',
+        bulan:   parseInt(d.bulan) >= 0 ? parseInt(d.bulan) : MONTH_NAMES.indexOf((d.bulanNama||'').toUpperCase()),
+        produk:  d.produk || '',
+        pck:     parseInt(d.pck)    || 0,
+        ecr:     parseInt(d.ecr)    || 0,
+        hj_pck:  parseInt(d.hj_pck) || 0,
+        hj_ecr:  parseInt(d.hj_ecr) || 0,
+        omzet:   parseInt(d.omzet)  || 0,
+      })).filter(d => d.produk && d.tanggal);
+
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
+      renderDashboard();
+      renderRecent();
+      updateSyncIndicator('ok', `✅ ${salesData.length} data berhasil disinkron`);
+      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
+      showAlert(`✅ ${salesData.length} data berhasil ditarik dari Google Sheets!`, true);
+    } else {
+      updateSyncIndicator('ok', 'Google Sheets belum ada data penjualan');
+      setTimeout(() => updateSyncIndicator('idle', 'Terhubung ke Google Sheets'), 3000);
+    }
+
   } catch(e) {
-    updateSyncIndicator('error', 'Gagal baca Google Sheets');
+    updateSyncIndicator('error', 'Gagal terhubung ke Apps Script');
+    showAlert('❌ Gagal Pull: ' + e.message, false);
   }
 }
 
@@ -1736,8 +1867,286 @@ async function pushProductsToSheets() {
   } catch(e) { /* silent */ }
 }
 
-// ── INIT ──
-loadProductPrices();
+// ══════════════════════════════════════════════════════════════════════════════
+// MANAJEMEN STOK
+// ══════════════════════════════════════════════════════════════════════════════
+
+const STOK_KEY     = 'qp_stok_2026';
+const RIWAYAT_KEY  = 'qp_riwayat_stok_2026';
+
+// stokData: { [namaProduk]: { masuk: number, minimum: number } }
+// riwayatStok: [ { id, tanggal, produk, jumlah, keterangan } ]
+let stokData    = {};
+let riwayatStok = [];
+
+function loadStok() {
+  try { stokData    = JSON.parse(localStorage.getItem(STOK_KEY))    || {}; } catch(e) { stokData    = {}; }
+  try { riwayatStok = JSON.parse(localStorage.getItem(RIWAYAT_KEY)) || []; } catch(e) { riwayatStok = []; }
+}
+
+function saveStok() {
+  try { localStorage.setItem(STOK_KEY,    JSON.stringify(stokData));    } catch(e) {}
+  try { localStorage.setItem(RIWAYAT_KEY, JSON.stringify(riwayatStok)); } catch(e) {}
+  if (GAS_URL) pushStokToSheets();
+}
+
+// ── Hitung sisa stok per produk ──
+function getSisaStok(namaProduk) {
+  const masuk   = (stokData[namaProduk] || {}).masuk || 0;
+  const terjual = salesData
+    .filter(d => d.produk === namaProduk)
+    .reduce((s, d) => s + (d.pck || 0) + (d.ecr || 0), 0);
+  return masuk - terjual;
+}
+
+function getMinStok(namaProduk) {
+  return (stokData[namaProduk] || {}).minimum ?? 5;
+}
+
+function getStatusStok(sisa, minimum) {
+  if (sisa <= 0)        return 'habis';
+  if (sisa <= minimum)  return 'tipis';
+  return 'aman';
+}
+
+// ── Autocomplete stok form ──
+let selectedStokProduct = null;
+function showStokAutocomplete(val) {
+  selectedStokProduct = null;
+  const list = document.getElementById('stok-autocomplete-list');
+  if (!val || val.length < 1) { list.style.display = 'none'; return; }
+  const matches = PRODUCTS.filter(p => p.nama.toLowerCase().includes(val.toLowerCase())).slice(0, 12);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(p =>
+    `<div class="autocomplete-item" onclick="selectStokProduct('${p.nama.replace(/'/g,"\\'")}')">
+      ${p.nama}
+      <span style="color:var(--gray);font-size:0.78rem;float:right">Sisa: ${getSisaStok(p.nama)}</span>
+    </div>`).join('');
+  list.style.display = 'block';
+}
+function selectStokProduct(nama) {
+  document.getElementById('stok-produk').value = nama;
+  document.getElementById('stok-autocomplete-list').style.display = 'none';
+  selectedStokProduct = nama;
+  // Isi minimum stok dari data tersimpan
+  document.getElementById('stok-minimum').value = getMinStok(nama);
+}
+
+// ── Simpan stok masuk ──
+function saveStokMasuk() {
+  const tanggal    = document.getElementById('stok-tanggal').value;
+  const produkNama = document.getElementById('stok-produk').value.trim();
+  const jumlah     = parseInt(document.getElementById('stok-masuk').value) || 0;
+  const minimum    = parseInt(document.getElementById('stok-minimum').value) ?? 5;
+  const keterangan = document.getElementById('stok-keterangan').value.trim();
+
+  if (!tanggal)     return showAlert('Pilih tanggal dulu!', false);
+  if (!produkNama)  return showAlert('Pilih nama produk!', false);
+  if (jumlah <= 0)  return showAlert('Jumlah stok masuk harus lebih dari 0!', false);
+
+  // Pastikan produk ada di master
+  const produk = PRODUCTS.find(p => p.nama.toLowerCase() === produkNama.toLowerCase());
+  if (!produk) return showAlert('Produk tidak ditemukan di master!', false);
+
+  // Update stokData
+  if (!stokData[produk.nama]) stokData[produk.nama] = { masuk: 0, minimum: 5 };
+  stokData[produk.nama].masuk   += jumlah;
+  stokData[produk.nama].minimum  = minimum;
+
+  // Tambah ke riwayat
+  riwayatStok.push({
+    id: Date.now(),
+    tanggal, produk: produk.nama, jumlah, keterangan
+  });
+
+  saveStok();
+  showAlert(`✅ Stok ${produk.nama} +${jumlah} berhasil dicatat!`, true);
+  clearStokForm();
+  renderStok();
+  renderStokKPI();
+}
+
+function clearStokForm() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('stok-tanggal').value   = today;
+  document.getElementById('stok-produk').value    = '';
+  document.getElementById('stok-masuk').value     = '0';
+  document.getElementById('stok-minimum').value   = '5';
+  document.getElementById('stok-keterangan').value = '';
+  selectedStokProduct = null;
+}
+
+// ── KPI Stok ──
+function renderStokKPI() {
+  let aman = 0, tipis = 0, habis = 0;
+  for (const p of PRODUCTS) {
+    const sisa = getSisaStok(p.nama);
+    const min  = getMinStok(p.nama);
+    const status = getStatusStok(sisa, min);
+    if (status === 'aman')  aman++;
+    else if (status === 'tipis') tipis++;
+    else habis++;
+  }
+  document.getElementById('stok-kpi-total').textContent = PRODUCTS.length;
+  document.getElementById('stok-kpi-aman').textContent  = aman;
+  document.getElementById('stok-kpi-tipis').textContent = tipis;
+  document.getElementById('stok-kpi-habis').textContent = habis;
+}
+
+// ── Render tabel stok ──
+let stokPage = 1;
+const STOK_PER_PAGE = 20;
+
+function renderStok() {
+  const search       = document.getElementById('stok-search').value.toLowerCase();
+  const filterStatus = document.getElementById('stok-filter-status').value;
+
+  let list = PRODUCTS.map(p => {
+    const sisa   = getSisaStok(p.nama);
+    const min    = getMinStok(p.nama);
+    const status = getStatusStok(sisa, min);
+    return { nama: p.nama, masuk: (stokData[p.nama] || {}).masuk || 0, terjual: ((stokData[p.nama] || {}).masuk || 0) - sisa, sisa, min, status };
+  });
+
+  if (search) list = list.filter(p => p.nama.toLowerCase().includes(search));
+  if (filterStatus !== 'all') list = list.filter(p => p.status === filterStatus);
+
+  // Sort: habis dulu, lalu tipis, lalu aman
+  list.sort((a, b) => {
+    const order = { habis: 0, tipis: 1, aman: 2 };
+    return order[a.status] - order[b.status];
+  });
+
+  renderStokKPI();
+
+  const totalPages = Math.ceil(list.length / STOK_PER_PAGE);
+  if (stokPage > totalPages) stokPage = 1;
+  const slice = list.slice((stokPage - 1) * STOK_PER_PAGE, stokPage * STOK_PER_PAGE);
+
+  const tbody = document.getElementById('stok-tbody');
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div>Tidak ada data stok</div></div></td></tr>`;
+    document.getElementById('stok-pagination').innerHTML = '';
+    return;
+  }
+
+  const statusBadge = {
+    aman:  `<span class="badge badge-green">✅ Aman</span>`,
+    tipis: `<span class="badge badge-gold">⚠️ Menipis</span>`,
+    habis: `<span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:0.75rem;font-weight:600;background:rgba(229,57,53,0.15);color:#EF9A9A;">❌ Habis</span>`
+  };
+
+  tbody.innerHTML = slice.map((p, i) => `
+    <tr style="${p.status === 'habis' ? 'background:rgba(229,57,53,0.05)' : p.status === 'tipis' ? 'background:rgba(201,168,76,0.05)' : ''}">
+      <td>${(stokPage - 1) * STOK_PER_PAGE + i + 1}</td>
+      <td class="product-name">${p.nama}</td>
+      <td class="num">${fmt(p.masuk)}</td>
+      <td class="num">${fmt(Math.max(0, p.terjual))}</td>
+      <td class="num" style="font-weight:700;color:${p.sisa <= 0 ? '#EF9A9A' : p.sisa <= p.min ? 'var(--gold2)' : '#81C784'}">${fmt(p.sisa)}</td>
+      <td class="num">${fmt(p.min)}</td>
+      <td>${statusBadge[p.status]}</td>
+      <td>
+        <button class="btn-gold" onclick="quickTambahStok('${p.nama.replace(/'/g,"\\'")}', ${p.min})"
+          style="padding:4px 10px;font-size:0.75rem">+ Stok</button>
+      </td>
+    </tr>`).join('');
+
+  // Pagination
+  const pag = document.getElementById('stok-pagination');
+  if (totalPages <= 1) { pag.innerHTML = ''; return; }
+  let html = `<span class="page-info">${list.length} produk</span>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="page-btn ${i === stokPage ? 'active' : ''}" onclick="stokPage=${i};renderStok()">${i}</button>`;
+  }
+  pag.innerHTML = html;
+}
+
+// ── Quick tambah stok dari tabel ──
+function quickTambahStok(nama, minimum) {
+  showPage('stok');
+  document.getElementById('stok-produk').value  = nama;
+  document.getElementById('stok-minimum').value = minimum;
+  document.getElementById('stok-masuk').value   = '1';
+  selectedStokProduct = nama;
+  document.getElementById('stok-masuk').focus();
+}
+
+// ── Riwayat stok masuk ──
+function showRiwayatStok() {
+  const tbody = document.getElementById('riwayat-stok-tbody');
+  const sorted = [...riwayatStok].reverse();
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div>Belum ada riwayat stok masuk</div></div></td></tr>`;
+  } else {
+    tbody.innerHTML = sorted.map(r => `
+      <tr>
+        <td>${r.tanggal}</td>
+        <td class="product-name">${r.produk}</td>
+        <td class="num"><span class="badge badge-green">+${fmt(r.jumlah)}</span></td>
+        <td style="color:var(--gray);font-size:0.83rem">${r.keterangan || '–'}</td>
+        <td><button class="btn-danger" onclick="deleteRiwayatStok(${r.id})" style="padding:4px 10px;font-size:0.75rem">Hapus</button></td>
+      </tr>`).join('');
+  }
+  document.getElementById('riwayat-stok-modal').style.display = 'flex';
+}
+
+function deleteRiwayatStok(id) {
+  const r = riwayatStok.find(x => x.id === id);
+  if (!r) return;
+  // Kurangi stokData
+  if (stokData[r.produk]) {
+    stokData[r.produk].masuk = Math.max(0, (stokData[r.produk].masuk || 0) - r.jumlah);
+  }
+  riwayatStok = riwayatStok.filter(x => x.id !== id);
+  saveStok();
+  showRiwayatStok();
+  renderStok();
+  showAlert('Riwayat dihapus & stok dikoreksi.', true);
+}
+
+// ── Push stok ke Google Sheets ──
+async function pushStokToSheets() {
+  if (!GAS_URL) return;
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'writeStok', stokData, riwayatStok })
+    });
+  } catch(e) { /* silent */ }
+}
+
+// ── Notifikasi stok menipis/habis saat buka dashboard ──
+function cekNotifikasiStok() {
+  const habis  = PRODUCTS.filter(p => getSisaStok(p.nama) <= 0);
+  const tipis  = PRODUCTS.filter(p => { const s = getSisaStok(p.nama); return s > 0 && s <= getMinStok(p.nama); });
+  if (habis.length > 0 || tipis.length > 0) {
+    const msg = [
+      habis.length  ? `❌ ${habis.length} produk stok HABIS` : '',
+      tipis.length  ? `⚠️ ${tipis.length} produk stok MENIPIS` : ''
+    ].filter(Boolean).join(' · ');
+    showAlert(msg, false);
+  }
+}
+
+// Load stok saat init
+loadStok();
+
+// Set default tanggal stok
+document.getElementById('stok-tanggal').value = new Date().toISOString().split('T')[0];
+
+// ── Update showPage agar render stok ──
+const _origShowPage = showPage;
+// Override showPage untuk tambah stok
+(function() {
+  const origShowPage = showPage;
+  showPage = function(name) {
+    origShowPage(name);
+    if (name === 'stok') { renderStok(); renderStokKPI(); }
+  };
+})();
+
+
 loadData();
 loadLogo();
 // Init sync indicator
