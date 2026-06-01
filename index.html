@@ -701,8 +701,8 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
         </div>
       </div>
       <div class="form-group">
-        <label>Jumlah Masuk (Pack) *</label>
-        <input type="number" id="stok-masuk" value="0" min="0" />
+        <label>Jumlah Masuk (Pack) * <span id="stok-masuk-preview" style="color:var(--gold2);font-weight:600;"></span></label>
+        <input type="number" id="stok-masuk" value="0" min="0" oninput="updateStokPreview()" />
       </div>
       <div class="form-group">
         <label>Batas Minimum Stok</label>
@@ -2056,25 +2056,24 @@ function saveStok() {
   if (GAS_URL) pushStokToSheets();
 }
 
-// ── Hitung sisa stok per produk (dalam satuan ECERAN) ──
+// ── Hitung sisa stok (masuk & terjual keduanya dalam satuan PCS) ──
 function getSisaStok(namaProduk) {
-  const masuk = (stokData[namaProduk] || {}).masuk || 0;
+  // masuk sudah tersimpan dalam PCS (dikonversi saat saveStokMasuk)
+  const masukPcs = (stokData[namaProduk] || {}).masuk || 0;
+
   const produk = PRODUCTS.find(p => p.nama === namaProduk);
   const isiPerPack = (produk && produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
-  const adaEcr = produk && produk.harga_jual_ecr > 0;
-  const adaPck = produk && produk.harga_jual_pck > 0;
 
-  // Hitung total keluar dalam satuan eceran
-  const terjual = salesData
+  // Hitung terjual dalam PCS
+  const terjualPcs = salesData
     .filter(d => d.produk === namaProduk)
     .reduce((s, d) => {
-      // Pack -> konversi ke eceran
-      const keluarEcr = (adaEcr || !adaPck) ? (d.ecr || 0) : 0;
-      const keluarPck = adaPck ? (d.pck || 0) * isiPerPack : (d.pck || 0);
+      const keluarPck = (d.pck || 0) * isiPerPack;
+      const keluarEcr = d.ecr || 0;
       return s + keluarPck + keluarEcr;
     }, 0);
 
-  return masuk - terjual;
+  return masukPcs - terjualPcs;
 }
 
 // ── Hitung sisa stok dalam satuan pack (helper display) ──
@@ -2123,8 +2122,25 @@ function selectStokProduct(nama) {
   document.getElementById('stok-produk').value = nama;
   document.getElementById('stok-autocomplete-list').style.display = 'none';
   selectedStokProduct = nama;
-  // Isi minimum stok dari data tersimpan
   document.getElementById('stok-minimum').value = getMinStok(nama);
+  updateStokPreview();
+}
+
+function updateStokPreview() {
+  const nama = document.getElementById('stok-produk').value.trim();
+  const jumlah = parseInt(document.getElementById('stok-masuk').value) || 0;
+  const preview = document.getElementById('stok-masuk-preview');
+  if (!preview) return;
+  if (!nama || jumlah <= 0) { preview.textContent = ''; return; }
+  const produk = PRODUCTS.find(p => p.nama.toLowerCase() === nama.toLowerCase());
+  const isiPerPack = (produk && produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
+  const pcs = jumlah * isiPerPack;
+  if (isiPerPack > 1) {
+    preview.textContent = `→ ${fmt(pcs)} pcs`;
+  } else {
+    preview.textContent = `(isi/pack belum diset)`;
+    preview.style.color = 'var(--gray)';
+  }
 }
 
 // ── Simpan stok masuk ──
@@ -2143,19 +2159,28 @@ function saveStokMasuk() {
   const produk = PRODUCTS.find(p => p.nama.toLowerCase() === produkNama.toLowerCase());
   if (!produk) return showAlert('Produk tidak ditemukan di master!', false);
 
-  // Update stokData
-  if (!stokData[produk.nama]) stokData[produk.nama] = { masuk: 0, minimum: 5 };
-  stokData[produk.nama].masuk   += jumlah;
-  stokData[produk.nama].minimum  = minimum;
+  // Konversi pack → pcs saat simpan
+  const isiPerPack = (produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
+  const jumlahPcs = jumlah * isiPerPack;
 
-  // Tambah ke riwayat
+  // Update stokData (selalu dalam satuan PCS)
+  if (!stokData[produk.nama]) stokData[produk.nama] = { masuk: 0, minimum: 5 };
+  stokData[produk.nama].masuk   += jumlahPcs;
+  // Hanya update minimum jika user mengisi > 0, agar tidak ter-overwrite tidak sengaja
+  if (minimum > 0) stokData[produk.nama].minimum = minimum;
+
+  // Tambah ke riwayat (simpan jumlah pack asli + pcs hasil konversi)
   riwayatStok.push({
     id: Date.now(),
-    tanggal, produk: produk.nama, jumlah, keterangan
+    tanggal, produk: produk.nama,
+    jumlah,        // pack (untuk riwayat yang mudah dibaca)
+    jumlahPcs,     // pcs (untuk audit)
+    keterangan: keterangan + (isiPerPack > 1 ? ` [${jumlah} pack × ${isiPerPack} = ${jumlahPcs} pcs]` : '')
   });
 
   saveStok();
-  showAlert(`✅ Stok ${produk.nama} +${jumlah} berhasil dicatat!`, true);
+  const info = isiPerPack > 1 ? ` (${jumlah} pack × ${isiPerPack} = ${jumlahPcs} pcs)` : ` (${jumlahPcs} pcs)`;
+  showAlert(`✅ Stok ${produk.nama} +${jumlah} pack${info} berhasil dicatat!`, true);
   clearStokForm();
   renderStok();
   renderStokKPI();
@@ -2243,7 +2268,12 @@ function renderStok() {
     return `<tr style="${p.status === 'habis' ? 'background:rgba(229,57,53,0.05)' : p.status === 'tipis' ? 'background:rgba(201,168,76,0.05)' : ''}">
       <td>${(stokPage - 1) * STOK_PER_PAGE + i + 1}</td>
       <td class="product-name">${p.nama}${infoIsi}</td>
-      <td class="num"><span style="font-size:0.75rem;color:var(--gray)">${jenis}</span> ${fmt(p.masuk)}</td>
+      <td class="num">${(() => {
+        const isiPack2 = prod && prod.isi_per_pack > 0 ? prod.isi_per_pack : 1;
+        const packCount = isiPack2 > 1 ? Math.floor(p.masuk / isiPack2) : p.masuk;
+        const packInfo2 = isiPack2 > 1 ? `<br><span style="font-size:0.72rem;color:var(--gray)">${fmt(packCount)} pack</span>` : '';
+        return `${fmt(p.masuk)} pcs${packInfo2}`;
+      })()}</td>
       <td class="num">${fmt(Math.max(0, p.terjual))}</td>
       <td class="num" style="font-weight:700;color:${p.sisa <= 0 ? '#EF9A9A' : p.sisa <= p.min ? 'var(--gold2)' : '#81C784'}">${fmt(sisaNilai)} pcs${packInfo}</td>
       <td class="num">${fmt(p.min)}</td>
@@ -2286,7 +2316,7 @@ function showRiwayatStok() {
       <tr>
         <td>${r.tanggal}</td>
         <td class="product-name">${r.produk}</td>
-        <td class="num"><span class="badge badge-green">+${fmt(r.jumlah)}</span></td>
+        <td class="num"><span class="badge badge-green">+${fmt(r.jumlah)} pack</span>${r.jumlahPcs && r.jumlahPcs !== r.jumlah ? `<br><span style="font-size:0.72rem;color:var(--gray)">${fmt(r.jumlahPcs)} pcs</span>` : ''}</td>
         <td style="color:var(--gray);font-size:0.83rem">${r.keterangan || '–'}</td>
         <td><button class="btn-danger" onclick="deleteRiwayatStok(${r.id})" style="padding:4px 10px;font-size:0.75rem">Hapus</button></td>
       </tr>`).join('');
