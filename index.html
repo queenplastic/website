@@ -1018,14 +1018,33 @@ function cleanNum(val) {
 // ── Fetch CSV dari Google Sheets ──
 async function fetchCSV(url) {
   const res = await fetch(url + '&t=' + Date.now());
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' – Pastikan spreadsheet sudah di-publish ke web');
+  const text = await res.text();
+  if (text.trim().startsWith('<')) throw new Error('Sheet belum di-publish. Buka Google Sheets → File → Bagikan & ekspor → Publikasikan ke web');
+  return text;
+}
+
+// ── Fetch via gviz (tidak perlu publish, pakai nama sheet langsung) ──
+async function fetchSheetByName(sheetName) {
+  const url = 'https://docs.google.com/spreadsheets/d/' + SPREADSHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(sheetName) + '&t=' + Date.now();
+  const res = await fetch(url);
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  return await res.text();
+  const text = await res.text();
+  if (text.trim().startsWith('<')) throw new Error('Tidak dapat mengakses sheet: ' + sheetName);
+  return text;
 }
 
 // ── Fetch & update Master Produk dari CSV ──
 async function fetchMasterProduk() {
   try {
-    const text = await fetchCSV(CSV_URLS.masterProduk);
+    // Gunakan nama sheet langsung (lebih andal daripada gid)
+    let text;
+    try {
+      text = await fetchSheetByName('MASTER PRODUK GAS');
+    } catch(e1) {
+      // fallback ke CSV URL dengan gid
+      text = await fetchCSV(CSV_URLS.masterProduk);
+    }
     const rows = parseCSV(text);
     if (!rows.length) { console.warn('fetchMasterProduk: CSV kosong'); return 0; }
 
@@ -1070,7 +1089,9 @@ async function fetchMasterProduk() {
 // ── Fetch & update Detail Penjualan dari CSV ──
 async function fetchDetailPenjualan() {
   try {
-    const text = await fetchCSV(CSV_URLS.detailPenjualan);
+    let text;
+    try { text = await fetchSheetByName('DETAIL PENJUALAN'); }
+    catch(e1) { text = await fetchCSV(CSV_URLS.detailPenjualan); }
     const rows = parseCSV(text);
     if (!rows.length) return 0;
     const BULAN_MAP = {};
@@ -1103,7 +1124,9 @@ async function fetchDetailPenjualan() {
 // ── Fetch & update Stok dari CSV ──
 async function fetchStokCSV() {
   try {
-    const textStok = await fetchCSV(CSV_URLS.stokProduk);
+    let textStok;
+    try { textStok = await fetchSheetByName('STOK PRODUK'); }
+    catch(e1) { textStok = await fetchCSV(CSV_URLS.stokProduk); }
     const rowsStok = parseCSV(textStok);
     rowsStok.forEach(r => {
       const nama = (r['nama produk'] || r['nama'] || '').trim();
@@ -1115,7 +1138,9 @@ async function fetchStokCSV() {
     });
 
 
-    const textRiwayat = await fetchCSV(CSV_URLS.riwayatStok);
+    let textRiwayat;
+    try { textRiwayat = await fetchSheetByName('RIWAYAT STOK'); }
+    catch(e1) { textRiwayat = await fetchCSV(CSV_URLS.riwayatStok); }
     const rowsRiwayat = parseCSV(textRiwayat);
     const fetched = rowsRiwayat
       .filter(r => r['tanggal'] && r['produk'])
