@@ -1119,11 +1119,16 @@ async function pullFromCSV(silent) {
       fetchDetailPenjualan(),
     ]);
     await fetchStokCSV();
+    // Render semua halaman agar data tersedia langsung saat dibuka
     renderDashboard();
     renderRecent();
     renderProduk();
     renderStok();
     renderStokKPI();
+    // Render halaman yang mungkin sudah aktif
+    if (currentPage === 'harian') initHarian();
+    else if (currentPage === 'bulanan') renderBulanan();
+    else if (currentPage === 'tahunan') renderTahunan();
     const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     updateSyncIndicator('ok', `✅ Update ${now} · ${nSales} transaksi`);
     setTimeout(() => updateSyncIndicator('idle', 'Auto-sync aktif'), 4000);
@@ -1242,12 +1247,23 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
+
+  // Sinkron nav-btn PC dengan nama page yang benar
+  const pageNavMap = {
+    'dashboard': 'dashboard',
+    'input':     'input',
+    'harian':    'harian',
+    'bulanan':   'bulanan',
+    'tahunan':   'tahunan',
+    'produk':    'produk',
+    'stok':      'stok'
+  };
+  const keyword = pageNavMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
-    if (b.textContent.toLowerCase().includes(name === 'dashboard' ? 'dashboard' :
-        name === 'input' ? 'input' : name === 'harian' ? 'harian' :
-        name === 'bulanan' ? 'bulanan' : name === 'tahunan' ? 'tahunan' : 'produk'))
+    if (b.textContent.trim().toLowerCase().includes(keyword))
       b.classList.add('active');
   });
+
   // Sync mobile bottom nav
   setMobileActiveByPage(name);
   currentPage = name;
@@ -1257,6 +1273,7 @@ function showPage(name) {
   else if (name === 'bulanan') renderBulanan();
   else if (name === 'tahunan') renderTahunan();
   else if (name === 'produk') renderProduk();
+  else if (name === 'stok') { renderStok(); renderStokKPI(); }
   // Scroll to top on mobile
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2261,16 +2278,7 @@ function cekNotifikasiStok() {
 // Set default tanggal stok
 document.getElementById('stok-tanggal').value = new Date().toISOString().split('T')[0];
 
-// ── Update showPage agar render stok ──
-const _origShowPage = showPage;
-// Override showPage untuk tambah stok
-(function() {
-  const origShowPage = showPage;
-  showPage = function(name) {
-    origShowPage(name);
-    if (name === 'stok') { renderStok(); renderStokKPI(); }
-  };
-})();
+// showPage sudah menangani stok secara langsung - tidak perlu override lagi
 
 
 loadData();
@@ -2280,6 +2288,8 @@ loadStok();
 updateSyncIndicator('syncing', 'Memuat data dari Google Sheets...');
 pullFromCSV(true).then(() => {
   startAutoRefresh();
+  // Render ulang halaman aktif setelah data tersedia
+  renderDashboard();
 });
 // Set default tanggal ke hari ini
 const today = new Date().toISOString().split('T')[0];
