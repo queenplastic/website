@@ -448,8 +448,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   </nav>
   <div class="topbar-actions">
     <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
-    <button class="btn-outline" onclick="pullFromSheets()" title="Ambil data terbaru dari Google Sheets" style="font-size:0.8rem;">🔄 Sync</button>
-    <button class="btn-outline" onclick="resetAndPull()" title="Reset & ambil ulang dari Google Sheets" style="border-color:rgba(239,154,154,0.4);color:#EF9A9A;font-size:0.8rem;">↺ Reset</button>
+    <button class="btn-outline" onclick="resetAndPull()" title="Refresh data dari Google Sheets" style="font-size:0.8rem;">↻ REFRESH</button>
     <button class="btn-gold" onclick="showPage('input')">+ Input Penjualan</button>
   </div>
 </div>
@@ -901,7 +900,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <span class="mnav-label">Input</span>
   </button>
   <button class="mobile-nav-btn" data-page="harian" onclick="showPage('harian');setMobileActive(this)">
-    <span class="mnav-icon">☼</span>
+    <span class="mnav-icon" style="font-size:1.6rem">☼</span>
     <span class="mnav-label">Harian</span>
   </button>
   <button class="mobile-nav-btn" data-page="bulanan" onclick="showPage('bulanan');setMobileActive(this)">
@@ -927,43 +926,16 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
 // ══════════════════════════════════════════════════════════════════════════════
 // DATA
 // ══════════════════════════════════════════════════════════════════════════════
-let PRODUCTS = [{"nama":"ASERA HIJAU","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"ASERA UNGU","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL COKLAT 500 ML","harga_modal":28000,"harga_jual_pck":30000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL COKLAT 650 ML","harga_modal":31000,"harga_jual_pck":33000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL COKLAT 800 ML","harga_modal":32000,"harga_jual_pck":34000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL PUTIH 500 ML","harga_modal":32000,"harga_jual_pck":35000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL PUTIH 650 ML","harga_modal":36000,"harga_jual_pck":38000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"BOWL PUTIH 800 ML","harga_modal":38000,"harga_jual_pck":40000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"CLIN WRAP","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"DUA PEDANG","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GAJAH MERAH","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GALON","harga_modal":20000,"harga_jual_pck":22000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GARPU BUAH","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GAS","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 12","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 14","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 14 OVAL","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 16","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 16 OVAL","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS 18 OVAL","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS ES BUAH","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS KOPI COKLAT","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS KOPI PUTIH","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS PUDING","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS SLIM 18 ISI 25","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GELAS ZAM ZAM 18 ISI 50","harga_modal":20000,"harga_jual_pck":23000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"GULA PASIR","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS L","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS M","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS S","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ANTI PANAS XS","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ARTHA 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ARTHA 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS HITAM 50","harga_modal":22000,"harga_jual_pck":25000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS JUMBO","harga_modal":25000,"harga_jual_pck":28000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS LORENG 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS TEBAL 40","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS TIPIS 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG ATLAS TIPIS 40","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG BAJI HITAM 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG BAJI PUTIH 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG CAHAYA 28","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 1","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 1 WARNA","harga_modal":9000,"harga_jual_pck":11000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 2","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GELAS 2 WARNA","harga_modal":11000,"harga_jual_pck":13000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG GLOBAL 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG HELEM 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KAISAR 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KAISAR 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KATES TIPIS 14","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KILOAN 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KUDA 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KUDA HITAM 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KUDA MERAH 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KURA' 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG KURA' TIPIS 14","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG LORI BIRU 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG LORI KUNING 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG MENTARI 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG MENTARI 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG MENTARI 35","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG PITA TIPIS 14","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG RAJAWALI 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG RMW 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG SAMPAH","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG TRIMA KASIH 14","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KANTONG TRIMA KASIH 24","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KAOS TANGAN PLASTIK","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KARET 5000","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KARET PELANGI","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KECAP JEMPOL","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"KOMPAS","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"LAMINASI","harga_modal":12000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"LAMINASI MOTIF","harga_modal":14000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"LOMBOK JEMPOL","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MANTEL","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 3A","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 3C","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 3CX","harga_modal":11000,"harga_jual_pck":13000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 4CX","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 5CA","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 6C","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MIKA 7C","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK BIMOLI","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK KITA 1L","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK KITA 2L","harga_modal":24000,"harga_jual_pck":27000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK KUNCI MAS","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"MINYAK RIZKI 1L","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TEBAL 100ML","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TEBAL 35ML","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TIPIS 100ML","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"NS CUP TIPIS 35ML","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAKU","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAPER BAG BESAR","harga_modal":15000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAPER BAG KECIL","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PAPER BAG SEDANG","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PLASTIK ROLL","harga_modal":15000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PONCH PIPA L","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PONCH PIPA M","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"PONCH PIPA S","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"RAFIA","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SAOS JEMPOL","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEAL CUP","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN BESAR","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN BENGKOK","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN BIASA","harga_modal":4000,"harga_jual_pck":6000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SEDOTAN JUMBO","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK COKLAT DAWET","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK COKLAT JUARA","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK COKLAT WAN","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK PUTIH DAWET","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK PUTIH JUARA","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SENDOK PUTIH WAN","harga_modal":7000,"harga_jual_pck":9000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SHEEL CUP MOTIF","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SHEEL CUP POLOS","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SOLASI FRESH","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 10X17","harga_modal":15000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 12X20","harga_modal":18000,"harga_jual_pck":21000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 14X22","harga_modal":20000,"harga_jual_pck":23000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 16X24","harga_modal":22000,"harga_jual_pck":25000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 20X29","harga_modal":25000,"harga_jual_pck":28000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STANDING PONCH 9X15","harga_modal":12000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM BURGER","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM KECIL","harga_modal":6000,"harga_jual_pck":8000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM KOTAK","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"STEROFOAM SEKAT","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"SUMPIT","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TEH SOSRO","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TELUR BESAR","harga_modal":28000,"harga_jual_pck":30000,"harga_jual_ecr":2500,"isi_per_pack":0},{"nama":"TELUR JUMBO","harga_modal":30000,"harga_jual_pck":32000,"harga_jual_ecr":3000,"isi_per_pack":0},{"nama":"TELUR KECIL","harga_modal":22000,"harga_jual_pck":24000,"harga_jual_ecr":2000,"isi_per_pack":0},{"nama":"TELUR SEDANG","harga_modal":25000,"harga_jual_pck":27000,"harga_jual_ecr":2200,"isi_per_pack":0},{"nama":"THINWALL BULAT 200 ML","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL BULAT 400 ML","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL BULAT 450 ML","harga_modal":13000,"harga_jual_pck":15000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 1000ML","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 120 ML","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 150 ML","harga_modal":9000,"harga_jual_pck":11000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL KOTAK 1500ML","harga_modal":17000,"harga_jual_pck":19000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 200 ML","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 300 ML","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 500 ML","harga_modal":14000,"harga_jual_pck":16000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 650 ML","harga_modal":15000,"harga_jual_pck":17000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"THINWALL PANJANG 750 ML","harga_modal":16000,"harga_jual_pck":18000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TINHWALL PANJANG 1000 ML","harga_modal":18000,"harga_jual_pck":20000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU MULTI BIRU","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU MULTI MERAH","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU PENGANTIN BESAR","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSU PENGANTIN KECIL","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSUE JOLY","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TISSUE SEEU","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TOMAT JEMPOL","harga_modal":4000,"harga_jual_pck":5000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUSUK CILOK","harga_modal":5000,"harga_jual_pck":6000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUSUK PANDA","harga_modal":12000,"harga_jual_pck":14000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUSUK PETA","harga_modal":8000,"harga_jual_pck":10000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP ATLAS","harga_modal":3000,"harga_jual_pck":5000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP ATLAS CEKUNG","harga_modal":4000,"harga_jual_pck":6000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP GELAS KOPI","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP PREMIUM","harga_modal":10000,"harga_jual_pck":12000,"harga_jual_ecr":0,"isi_per_pack":0},{"nama":"TUTUP SARINDO","harga_modal":5000,"harga_jual_pck":7000,"harga_jual_ecr":0,"isi_per_pack":0}];
+// Produk dimuat dinamis dari Google Sheets (Master Produk)
+let PRODUCTS = [];
 
 const MONTH_NAMES = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
 const MONTH_DAYS = [31,28,31,30,31,30,31,31,30,31,30,31];
 const PRODUCTS_KEY = 'qp_products_2026';
 
-// ── LOAD/SAVE HARGA PRODUK dari localStorage ──
-function loadProductPrices() {
-  try {
-    const saved = localStorage.getItem(PRODUCTS_KEY);
-    if (!saved) return;
-    const savedMap = JSON.parse(saved); // { "NAMA": { harga_jual_pck, harga_jual_ecr, harga_modal } }
-    PRODUCTS = PRODUCTS.map(p => {
-      const s = savedMap[p.nama];
-      if (!s) return p;
-      return { ...p,
-        harga_modal:    s.harga_modal    ?? p.harga_modal,
-        harga_jual_pck: s.harga_jual_pck ?? p.harga_jual_pck,
-        harga_jual_ecr: s.harga_jual_ecr ?? p.harga_jual_ecr,
-      };
-    });
-  } catch(e) {}
-}
-
-function saveProductPrices() {
-  try {
-    const map = {};
-    PRODUCTS.forEach(p => {
-      map[p.nama] = {
-        harga_modal:    p.harga_modal,
-        harga_jual_pck: p.harga_jual_pck,
-        harga_jual_ecr: p.harga_jual_ecr,
-      };
-    });
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(map));
-  } catch(e) {}
-}
+// saveProductPrices — tidak pakai localStorage, no-op
+function loadProductPrices() {}
+function saveProductPrices() {}
 
 function applyProductPrices(incoming) {
   // incoming: array of { nama, harga_modal, harga_jual_pck, harga_jual_ecr }
@@ -993,7 +965,7 @@ function applyProductPrices(incoming) {
 const STORAGE_KEY = 'qp_sales_2026';
 
 // GAS URL untuk MENULIS data (input penjualan, produk, stok)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsPob7tftr1qLAs_hznn5j8OIQYhxU4d9LORw9-4UGcU1POqscknHxXLl9PKbinrkC/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby0RVrvRAsTySEgTVooQzmXSU7gAOqz1I9U3ytyeMbR5E98l9Zn1kXgpVobL6K-l7Yn/exec';
 
 // ── CSV URLs untuk MEMBACA data real-time dari Google Sheets ──
 const SPREADSHEET_ID = '1FBeWRu4dp9cF705x1mLcC3ZVmKboa80UbYu8_Z_gLBU';
@@ -1053,27 +1025,23 @@ async function fetchMasterProduk() {
     const text = await fetchCSV(CSV_URLS.masterProduk);
     const rows = parseCSV(text);
     if (!rows.length) return 0;
-    let updated = 0;
-    const map = {};
+    // Bangun ulang PRODUCTS sepenuhnya dari sheet (tidak ada hardcode)
+    const parsed = [];
     rows.forEach(r => {
       const nama = (r['nama produk'] || r['nama'] || '').trim().toUpperCase();
       if (!nama) return;
-      map[nama] = {
+      parsed.push({
         nama,
         harga_modal:    cleanNum(r['harga modal'] || r['modal'] || 0),
         harga_jual_pck: cleanNum(r['harga jual pack'] || r['harga jual pck'] || r['pack'] || 0),
         harga_jual_ecr: cleanNum(r['harga jual ecr'] || r['ecr'] || r['eceran'] || 0),
         isi_per_pack:   cleanNum(r['isi per pack'] || r['isi_per_pack'] || r['isi'] || 0),
-      };
+      });
     });
-    PRODUCTS = PRODUCTS.map(p => {
-      const key = p.nama.toUpperCase();
-      if (!map[key]) return p;
-      updated++;
-      return { ...p, ...map[key], nama: p.nama };
-    });
+    if (!parsed.length) return 0;
+    PRODUCTS = parsed;
     saveProductPrices();
-    return updated;
+    return parsed.length;
   } catch(e) { console.warn('fetchMasterProduk error:', e.message); return 0; }
 }
 
@@ -1106,7 +1074,6 @@ async function fetchDetailPenjualan() {
       .filter(Boolean);
     if (!parsed.length) return 0;
     salesData = parsed;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
     return parsed.length;
   } catch(e) { console.warn('fetchDetailPenjualan error:', e.message); return 0; }
 }
@@ -1124,7 +1091,7 @@ async function fetchStokCSV() {
         minimum: cleanNum(r['min stok'] || r['minimum'] || 5),
       };
     });
-    try { localStorage.setItem(STOK_KEY, JSON.stringify(stokData)); } catch(e) {}
+
 
     const textRiwayat = await fetchCSV(CSV_URLS.riwayatStok);
     const rowsRiwayat = parseCSV(textRiwayat);
@@ -1139,7 +1106,6 @@ async function fetchStokCSV() {
       }));
     if (fetched.length) {
       riwayatStok = fetched;
-      try { localStorage.setItem(RIWAYAT_KEY, JSON.stringify(riwayatStok)); } catch(e) {}
     }
   } catch(e) { console.warn('fetchStokCSV error:', e.message); }
 }
@@ -1187,14 +1153,10 @@ function updateSyncIndicator(status, msg) {
 let salesData = [];
 
 function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    salesData = raw ? JSON.parse(raw) : [];
-  } catch(e) { salesData = []; }
+  salesData = [];
 }
 
 function saveData() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(salesData)); } catch(e) {}
   // Auto-push ke Google Sheets jika GAS_URL sudah diisi
   if (GAS_URL) pushToSheets();
 }
@@ -1997,12 +1959,6 @@ async function resetAndPull() {
   salesData   = [];
   stokData    = {};
   riwayatStok = [];
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STOK_KEY);
-    localStorage.removeItem(RIWAYAT_KEY);
-  } catch(e) {}
-
   // Tarik ulang dari Sheets
   await pullFromSheets();
 }
@@ -2017,13 +1973,11 @@ let stokData    = {};
 let riwayatStok = [];
 
 function loadStok() {
-  try { stokData    = JSON.parse(localStorage.getItem(STOK_KEY))    || {}; } catch(e) { stokData    = {}; }
-  try { riwayatStok = JSON.parse(localStorage.getItem(RIWAYAT_KEY)) || []; } catch(e) { riwayatStok = []; }
+  stokData    = {};
+  riwayatStok = [];
 }
 
 function saveStok() {
-  try { localStorage.setItem(STOK_KEY,    JSON.stringify(stokData));    } catch(e) {}
-  try { localStorage.setItem(RIWAYAT_KEY, JSON.stringify(riwayatStok)); } catch(e) {}
   if (GAS_URL) pushStokToSheets();
 }
 
