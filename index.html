@@ -414,6 +414,9 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
 /* ── PROGRESS BAR ── */
 .progress-bar { background: rgba(255,255,255,0.06); border-radius: 4px; height: 5px; margin-top: 4px; }
 .progress-fill { background: linear-gradient(90deg, var(--gold), var(--gold3)); border-radius: 4px; height: 100%; transition: width 0.6s ease; }
+
+/* ── SPIN ANIMATION ── */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -1024,21 +1027,40 @@ async function fetchMasterProduk() {
   try {
     const text = await fetchCSV(CSV_URLS.masterProduk);
     const rows = parseCSV(text);
-    if (!rows.length) return 0;
-    // Bangun ulang PRODUCTS sepenuhnya dari sheet (tidak ada hardcode)
+    if (!rows.length) { console.warn('fetchMasterProduk: CSV kosong'); return 0; }
+
+    // Debug: tampilkan header yang diterima
+    const headerKeys = Object.keys(rows[0]);
+    console.log('Header Master Produk:', headerKeys);
+
     const parsed = [];
     rows.forEach(r => {
-      const nama = (r['nama produk'] || r['nama'] || '').trim().toUpperCase();
+      // Cari kolom nama — lebih fleksibel
+      const namaRaw = r['nama produk'] || r['nama_produk'] || r['nama'] || r['product'] || r['produk'] || '';
+      const nama = namaRaw.trim().toUpperCase();
       if (!nama) return;
+
+      // Cari kolom harga — cek semua kemungkinan nama
+      const allKeys = Object.keys(r);
+      const findVal = (...keywords) => {
+        for (const kw of keywords) {
+          const key = allKeys.find(k => k.toLowerCase().includes(kw));
+          if (key && r[key]) return cleanNum(r[key]);
+        }
+        return 0;
+      };
+
       parsed.push({
         nama,
-        harga_modal:    cleanNum(r['harga modal'] || r['modal'] || 0),
-        harga_jual_pck: cleanNum(r['harga jual pack'] || r['harga jual pck'] || r['pack'] || 0),
-        harga_jual_ecr: cleanNum(r['harga jual ecr'] || r['ecr'] || r['eceran'] || 0),
-        isi_per_pack:   cleanNum(r['isi per pack'] || r['isi_per_pack'] || r['isi'] || 0),
+        harga_modal:    findVal('modal'),
+        harga_jual_pck: findVal('pack', 'pck'),
+        harga_jual_ecr: findVal('ecr', 'ecer', 'eceran'),
+        isi_per_pack:   findVal('isi'),
       });
     });
-    if (!parsed.length) return 0;
+
+    if (!parsed.length) { console.warn('fetchMasterProduk: tidak ada produk valid'); return 0; }
+    console.log(`fetchMasterProduk: ${parsed.length} produk berhasil dimuat`);
     PRODUCTS = parsed;
     saveProductPrices();
     return parsed.length;
@@ -1691,9 +1713,20 @@ function renderProdukPage() {
   const search = document.getElementById('produk-search').value.toLowerCase();
   let prods = PRODUCTS.filter(p => !search || p.nama.toLowerCase().includes(search));
   const total = prods.length;
+  const tbody = document.getElementById('produk-tbody');
+
+  if (!total) {
+    const msg = PRODUCTS.length === 0
+      ? '<div class="empty-state"><div class="icon">📦</div><div>Data produk belum tersedia.<br><span style="font-size:0.82rem;color:var(--gray)">Pastikan sheet "MASTER PRODUK GAS" sudah di-publish ke web, lalu tekan ↻ REFRESH.</span></div></div>'
+      : '<div class="empty-state"><div>Produk tidak ditemukan</div></div>';
+    tbody.innerHTML = `<tr><td colspan="8">${msg}</td></tr>`;
+    document.getElementById('produk-pagination').innerHTML = '';
+    return;
+  }
+
   const start = produkPage * PRODUK_PER_PAGE;
   const paginated = prods.slice(start, start + PRODUK_PER_PAGE);
-  const tbody = document.getElementById('produk-tbody');
+
   tbody.innerHTML = paginated.map((p, i) => {
     const margin = p.harga_modal > 0 ? (((p.harga_jual_pck - p.harga_modal) / p.harga_modal) * 100).toFixed(0) : 0;
     const adaEcr = p.harga_jual_ecr > 0;
@@ -2300,8 +2333,13 @@ document.getElementById('inp-bulan').value = todayMonth;
 document.getElementById('harian-month-tabs').innerHTML = MONTH_NAMES.map((m, i) =>
   `<button class="month-tab ${i === harianMonth ? 'active' : ''}" onclick="setHarianMonth(${i})">${m.substring(0,3)}</button>`
 ).join('');
+
+// Tampilkan loading state di tabel produk sebelum data tiba
+document.getElementById('produk-tbody').innerHTML =
+  `<tr><td colspan="8"><div class="empty-state"><div class="icon" style="font-size:2rem;animation:spin 1s linear infinite;display:inline-block">⟳</div><div style="margin-top:8px">Memuat data produk dari Google Sheets...</div></div></td></tr>`;
+
 renderDashboard();
-renderProduk();
+
 </script>
 </body>
 </html>
