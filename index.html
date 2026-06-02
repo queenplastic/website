@@ -4,8 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Queen Plastic – Dashboard Penjualan</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#1A1A1A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Queen Plastic">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon"
+      href="https://raw.githubusercontent.com/queenplastic/website/cbabede21fe6074df59177335d1d3e2de67e9286/logo.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js');
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --black: #0F0F0F;
@@ -417,9 +430,157 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
 
 /* ── SPIN ANIMATION ── */
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── NETWORK NOTIFICATION ── */
+#network-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 0.85rem; font-weight: 500; font-family: 'DM Sans', sans-serif;
+  transform: translateY(100%);
+  transition: transform 0.35s ease;
+}
+#network-banner.show { transform: translateY(0); }
+#network-banner.offline {
+  background: rgba(229,57,53,0.95);
+  color: #fff;
+  border-top: 1px solid rgba(255,100,100,0.4);
+  backdrop-filter: blur(8px);
+}
+#network-banner.slow {
+  background: rgba(201,168,76,0.95);
+  color: #0F0F0F;
+  border-top: 1px solid rgba(201,168,76,0.4);
+  backdrop-filter: blur(8px);
+}
+#network-banner.back-online {
+  background: rgba(76,175,80,0.95);
+  color: #fff;
+  border-top: 1px solid rgba(76,175,80,0.4);
+  backdrop-filter: blur(8px);
+}
+@media (max-width: 768px) {
+  #network-banner { bottom: 76px; font-size: 0.78rem; padding: 8px 14px; }
+}
 </style>
 </head>
 <body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center, #1A1500 0%, #0F0F0F 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
+  <style>
+    /* ── Cincin berputar ── */
+    @keyframes ring-spin-1 {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+    @keyframes ring-spin-2 {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(-360deg); }
+    }
+    @keyframes ring-spin-3 {
+      from { transform: rotate(45deg); }
+      to   { transform: rotate(405deg); }
+    }
+    /* ── Logo breathe ── */
+    @keyframes logo-breathe {
+      0%, 100% { transform: scale(0.96); }
+      50%       { transform: scale(1.04); }
+    }
+    /* ── Glow logo ── */
+    @keyframes logo-glow {
+      0%, 100% { box-shadow: 0 0 30px rgba(201,168,76,0.4), 0 0 60px rgba(201,168,76,0.2); }
+      50%       { box-shadow: 0 0 55px rgba(201,168,76,0.8), 0 0 100px rgba(201,168,76,0.4), 0 0 150px rgba(201,168,76,0.15); }
+    }
+    /* ── Kilau / shimmer melintas ── */
+    @keyframes shimmer {
+      0%   { transform: rotate(0deg) translateX(60px) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: rotate(360deg) translateX(60px) rotate(-360deg); opacity: 0; }
+    }
+    @keyframes shimmer2 {
+      0%   { transform: rotate(180deg) translateX(75px) rotate(-180deg); opacity: 0; }
+      10%  { opacity: 0.7; }
+      90%  { opacity: 0.7; }
+      100% { transform: rotate(540deg) translateX(75px) rotate(-540deg); opacity: 0; }
+    }
+    /* ── Partikel ── */
+    @keyframes particle-float {
+      0%   { transform: translateY(0) scale(1);   opacity: 0; }
+      20%  { opacity: 1; }
+      80%  { opacity: 0.6; }
+      100% { transform: translateY(-80px) scale(0); opacity: 0; }
+    }
+    /* ── Brand text fade in ── */
+    @keyframes brand-fadein {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    /* ── Progress bar ── */
+    @keyframes progress-fill {
+      from { width: 0%; }
+      to   { width: 100%; }
+    }
+    @keyframes dot-wave {
+      0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+      30%            { transform: translateY(-5px); opacity: 1;   }
+    }
+  </style>
+
+  <!-- Partikel emas melayang -->
+  <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden;">
+    <div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(201,168,76,0.30);left:10%;top:20%;animation:particle-float 2.5s ease-in-out infinite 0.0s;"></div><div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.45);left:23%;top:37%;animation:particle-float 3.3s ease-in-out infinite 0.4s;"></div><div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(201,168,76,0.60);left:36%;top:54%;animation:particle-float 4.1s ease-in-out infinite 0.8s;"></div><div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(201,168,76,0.75);left:49%;top:71%;animation:particle-float 2.5s ease-in-out infinite 1.2s;"></div><div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.30);left:62%;top:28%;animation:particle-float 3.3s ease-in-out infinite 1.6s;"></div><div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(201,168,76,0.45);left:75%;top:45%;animation:particle-float 4.1s ease-in-out infinite 2.0s;"></div><div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(201,168,76,0.60);left:88%;top:62%;animation:particle-float 2.5s ease-in-out infinite 2.4s;"></div><div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.75);left:21%;top:79%;animation:particle-float 3.3s ease-in-out infinite 2.8s;"></div><div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(201,168,76,0.30);left:34%;top:36%;animation:particle-float 4.1s ease-in-out infinite 3.2s;"></div><div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(201,168,76,0.45);left:47%;top:53%;animation:particle-float 2.5s ease-in-out infinite 3.6s;"></div><div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.60);left:60%;top:70%;animation:particle-float 3.3s ease-in-out infinite 4.0s;"></div><div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(201,168,76,0.75);left:73%;top:27%;animation:particle-float 4.1s ease-in-out infinite 4.4s;"></div>
+  </div>
+
+  <!-- Wrapper logo + cincin -->
+  <div style="position:relative;width:200px;height:200px;display:flex;align-items:center;justify-content:center;margin-bottom:32px;">
+
+    <!-- Cincin 1: berputar searah, putus-putus tebal -->
+    <div style="position:absolute;inset:-10px;border-radius:50%;border:2px solid transparent;border-top:2px solid rgba(201,168,76,0.9);border-right:2px solid rgba(201,168,76,0.4);animation:ring-spin-1 2.4s cubic-bezier(0.4,0,0.2,1) infinite;"></div>
+
+    <!-- Cincin 2: berlawanan, tipis -->
+    <div style="position:absolute;inset:-22px;border-radius:50%;border:1.5px solid transparent;border-top:1.5px solid rgba(240,212,122,0.6);border-left:1.5px solid rgba(240,212,122,0.2);animation:ring-spin-2 3.6s linear infinite;"></div>
+
+    <!-- Cincin 3: diagonal, titik-titik -->
+    <div style="position:absolute;inset:-34px;border-radius:50%;border:1px dashed rgba(201,168,76,0.25);animation:ring-spin-3 8s linear infinite;"></div>
+
+    <!-- Kilau 1 -->
+    <div style="position:absolute;width:6px;height:6px;border-radius:50%;background:radial-gradient(circle,#F0D47A,rgba(201,168,76,0));animation:shimmer 2.4s linear infinite;"></div>
+    <!-- Kilau 2 -->
+    <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:radial-gradient(circle,#fff,rgba(240,212,122,0));animation:shimmer2 3.6s linear infinite 0.8s;"></div>
+
+    <!-- Logo -->
+    <div style="width:130px;height:130px;border-radius:50%;overflow:hidden;border:2px solid rgba(201,168,76,0.5);animation:logo-breathe 4s ease-in-out infinite, logo-glow 4s ease-in-out infinite;flex-shrink:0;">
+      <img
+  src="https://raw.githubusercontent.com/queenplastic/website/cbabede21fe6074df59177335d1d3e2de67e9286/logo.png"
+  style="width:100%;height:100%;object-fit:cover;"
+/>
+    </div>
+  </div>
+
+  <!-- Brand name -->
+  <div style="font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;color:#E8C56A;letter-spacing:0.1em;margin-bottom:4px;animation:brand-fadein 1s ease 0.3s both;">Queen Plastic</div>
+  <div style="font-size:0.68rem;color:#666;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:28px;animation:brand-fadein 1s ease 0.6s both;">Dashboard Penjualan</div>
+
+  <!-- Progress bar tipis -->
+  <div style="width:140px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:20px;animation:brand-fadein 0.5s ease 0.8s both;">
+    <div style="height:100%;background:linear-gradient(90deg,var(--gold,#C9A84C),#F0D47A);border-radius:2px;animation:progress-fill 2.5s cubic-bezier(0.4,0,0.6,1) 0.3s both;"></div>
+  </div>
+
+  <!-- Dots -->
+  <div style="display:flex;gap:7px;align-items:center;animation:brand-fadein 0.5s ease 1s both;">
+    <div style="width:6px;height:6px;border-radius:50%;background:#C9A84C;animation:dot-wave 1.2s ease-in-out infinite 0s;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:#C9A84C;animation:dot-wave 1.2s ease-in-out infinite 0.2s;"></div>
+    <div style="width:6px;height:6px;border-radius:50%;background:#C9A84C;animation:dot-wave 1.2s ease-in-out infinite 0.4s;"></div>
+  </div>
+</div>
+
+<!-- NETWORK NOTIFICATION BANNER --><!-- NETWORK NOTIFICATION BANNER -->
+<div id="network-banner">
+  <span id="network-banner-icon"></span>
+  <span id="network-banner-text"></span>
+</div>
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -451,6 +612,10 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   </nav>
   <div class="topbar-actions">
     <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
+    <button id="pwa-install-btn" onclick="installPWA()" title="Install sebagai aplikasi"
+  style="display:none;align-items:center;gap:6px;background:linear-gradient(135deg,var(--gold),var(--gold3));color:var(--black);font-weight:700;font-size:0.78rem;border:none;cursor:pointer;border-radius:8px;padding:7px 14px;letter-spacing:0.03em;">
+  ⬇ Install App
+</button>
     <button class="btn-outline" onclick="resetAndPull()" title="Refresh data dari Google Sheets" style="font-size:0.8rem;">↻ REFRESH</button>
     <button class="btn-gold" onclick="showPage('input')">+ Input Penjualan</button>
   </div>
@@ -466,7 +631,14 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     </div>
   </div>
 
-  <div class="filter-bar" style="margin-bottom:20px">
+  <div class="filter-bar" style="margin-bottom:20px;justify-content:space-between;align-items:center;">
+
+    <!-- Jam Digital -->
+    <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:160px;">
+      <div id="clock-time" style="font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;color:var(--gold2);letter-spacing:0.08em;line-height:1;">00:00:00</div>
+      <div id="clock-date" style="font-size:0.7rem;color:var(--gray);letter-spacing:0.08em;margin-top:3px;text-transform:uppercase;"></div>
+    </div>
+
     <div class="filter-group">
       <label>Filter Bulan</label>
       <select id="dash-month-filter" onchange="renderDashboard()">
@@ -482,10 +654,50 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   </div>
 
   <div class="kpi-grid" id="kpi-grid">
-    <div class="kpi-card"><div class="kpi-label">Total Omzet</div><div class="kpi-value" id="kpi-omzet">Rp 0</div><div class="kpi-sub" id="kpi-omzet-sub">–</div></div>
+    <div class="kpi-card" onclick="showProfitModal()" style="cursor:pointer;" title="Klik untuk lihat detail keuntungan">
+      <div class="kpi-label">Total Omzet</div>
+      <div class="kpi-value" id="kpi-omzet">Rp 0</div>
+      <div class="kpi-sub" id="kpi-omzet-sub">–</div>
+    </div>
     <div class="kpi-card"><div class="kpi-label">Total Qty Terjual</div><div class="kpi-value" id="kpi-qty">0</div><div class="kpi-sub" id="kpi-qty-sub">–</div></div>
     <div class="kpi-card"><div class="kpi-label">Jumlah Produk Aktif</div><div class="kpi-value" id="kpi-produk">0</div><div class="kpi-sub">produk terjual</div></div>
     <div class="kpi-card"><div class="kpi-label">Total Transaksi</div><div class="kpi-value" id="kpi-transaksi">0</div><div class="kpi-sub">entri data</div></div>
+  </div>
+
+  <!-- PROFIT MODAL -->
+  <div id="profit-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+    <div style="background:var(--black2);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:28px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.8);position:relative;">
+      <button onclick="document.getElementById('profit-modal').style.display='none'"
+        style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
+      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:4px;">💰 Detail Keuntungan</div>
+      <div id="profit-modal-period" style="font-size:0.8rem;color:var(--gray);margin-bottom:20px;"></div>
+
+      <!-- Total Keuntungan -->
+      <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:0.76rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Total Keuntungan Bersih</div>
+        <div id="profit-total" style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--gold2);">Rp 0</div>
+        <div id="profit-margin-pct" style="font-size:0.82rem;color:var(--gray);margin-top:4px;"></div>
+      </div>
+
+      <!-- Keuntungan Pack & Eceran -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Keuntungan Pack</div>
+          <div id="profit-pack" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#81C784;">Rp 0</div>
+          <div id="profit-pack-sub" style="font-size:0.76rem;color:var(--gray);margin-top:3px;"></div>
+        </div>
+        <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Keuntungan Eceran</div>
+          <div id="profit-ecr" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#64B5F6;">Rp 0</div>
+          <div id="profit-ecr-sub" style="font-size:0.76rem;color:var(--gray);margin-top:3px;"></div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div style="font-size:0.76rem;color:var(--gray2);text-align:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+        Dihitung dari: (Harga Jual − Harga Modal) × Qty Terjual
+      </div>
+    </div>
   </div>
 
   <div class="chart-grid">
@@ -513,7 +725,8 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
 
   <div class="form-card">
     <h3>Form Input Penjualan</h3>
-    <div class="form-grid">
+    <!-- Tanggal & Bulan (shared untuk semua item) -->
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:20px;">
       <div class="form-group">
         <label>Tanggal *</label>
         <input type="date" id="inp-tanggal" />
@@ -529,29 +742,27 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
           <option value="10">November</option><option value="11">Desember</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Nama Produk *</label>
-        <div class="autocomplete-wrap">
-          <input type="text" id="inp-produk" placeholder="Ketik nama produk..." autocomplete="off" oninput="showAutocomplete(this.value)" />
-          <div class="autocomplete-list" id="autocomplete-list" style="display:none"></div>
+    </div>
+
+    <!-- Container baris item -->
+    <div id="multi-item-list" style="border:1px solid rgba(201,168,76,0.2);border-radius:8px;overflow:hidden;"></div>
+
+    <!-- Total & aksi -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="btn-outline" onclick="addItemRow()" style="font-size:0.82rem;padding:8px 16px;">+ Tambah Item</button>
+        <span style="font-size:0.82rem;color:var(--gray)" id="multi-item-count">1 item</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.06em;">Total Omzet</div>
+          <div id="multi-total-omzet" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--gold2);">Rp 0</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-outline" onclick="clearAllItems()">Bersihkan</button>
+          <button class="btn-gold" onclick="saveAllEntries()">Simpan Semua</button>
         </div>
       </div>
-      <div class="form-group">
-        <label>Qty Pack (Pck)</label>
-        <input type="number" id="inp-pck" value="0" min="0" />
-      </div>
-      <div class="form-group">
-        <label>Qty Eceran (Ecr)</label>
-        <input type="number" id="inp-ecr" value="0" min="0" />
-      </div>
-      <div class="form-group">
-        <label>Preview Omzet</label>
-        <input type="text" id="inp-preview-omzet" readonly style="background:rgba(201,168,76,0.08);color:var(--gold2);font-weight:600;" />
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-outline" onclick="clearForm()">Bersihkan</button>
-      <button class="btn-gold" onclick="saveEntry()">Simpan Data</button>
     </div>
   </div>
 
@@ -903,7 +1114,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <span class="mnav-label">Input</span>
   </button>
   <button class="mobile-nav-btn" data-page="harian" onclick="showPage('harian');setMobileActive(this)">
-    <span class="mnav-icon" style="font-size:1.6rem">☼</span>
+    <span class="mnav-icon" style="font-size:1.5rem;display:block;height:1.3rem;line-height:1.3rem;overflow:visible;">☼</span>
     <span class="mnav-label">Harian</span>
   </button>
   <button class="mobile-nav-btn" data-page="bulanan" onclick="showPage('bulanan');setMobileActive(this)">
@@ -968,7 +1179,7 @@ function applyProductPrices(incoming) {
 const STORAGE_KEY = 'qp_sales_2026';
 
 // GAS URL untuk MENULIS data (input penjualan, produk, stok)
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby0RVrvRAsTySEgTVooQzmXSU7gAOqz1I9U3ytyeMbR5E98l9Zn1kXgpVobL6K-l7Yn/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycby9lNOHGC3buCPd3X1IPssFF5dy2kP3wCKS15EtwCJMhTVZuswgEunK3ZwoXMZ8DR8z/exec';
 
 // ── CSV URLs untuk MEMBACA data real-time dari Google Sheets ──
 const SPREADSHEET_ID = '1FBeWRu4dp9cF705x1mLcC3ZVmKboa80UbYu8_Z_gLBU';
@@ -1380,7 +1591,7 @@ function renderDashboard() {
   charts['chart-monthly'] = new Chart(document.getElementById('chart-monthly'), {
     type: 'bar',
     data: {
-      labels: MONTH_NAMES.map(m => m.substring(0,3)),
+      labels: Array.from({length:12}, (_,i) => i+1),
       datasets: [{
         label: 'Omzet (Rp)',
         data: monthly.map(m => m.omzet),
@@ -1440,82 +1651,233 @@ function chartOptions(unit) {
   };
 }
 
-// ── AUTOCOMPLETE ──
-let selectedProduct = null;
-function showAutocomplete(val) {
-  selectedProduct = null;
-  updateOmzetPreview();
-  const list = document.getElementById('autocomplete-list');
-  if (!val || val.length < 1) { list.style.display = 'none'; return; }
+
+// ── PROFIT MODAL ──
+function showProfitModal() {
+  const mFilter = document.getElementById('dash-month-filter').value;
+  const data = getFilteredData(mFilter === 'all' ? null : mFilter);
+
+  let profitPack = 0, profitEcr = 0, qtyPack = 0, qtyEcr = 0;
+  for (const d of data) {
+    const prod = PRODUCTS.find(p => p.nama === d.produk);
+    if (!prod || !prod.harga_modal) continue;
+    const marginPck = (prod.harga_jual_pck || 0) - (prod.harga_modal || 0);
+    const marginEcr = (prod.harga_jual_ecr || prod.harga_jual_pck || 0) - (prod.harga_modal || 0);
+    profitPack += marginPck * (d.pck || 0);
+    profitEcr  += marginEcr * (d.ecr || 0);
+    qtyPack    += d.pck || 0;
+    qtyEcr     += d.ecr || 0;
+  }
+
+  const totalProfit = profitPack + profitEcr;
+  const totalOmzet  = data.reduce((s, d) => s + (d.omzet || 0), 0);
+  const marginPct   = totalOmzet > 0 ? ((totalProfit / totalOmzet) * 100).toFixed(1) : 0;
+  const period      = mFilter === 'all' ? 'Semua Bulan' : MONTH_NAMES[parseInt(mFilter)];
+
+  document.getElementById('profit-modal-period').textContent = 'Periode: ' + period;
+  document.getElementById('profit-total').textContent = rp(totalProfit);
+  document.getElementById('profit-margin-pct').textContent = `Margin rata-rata: ${marginPct}% dari omzet`;
+  document.getElementById('profit-pack').textContent = rp(profitPack);
+  document.getElementById('profit-pack-sub').textContent = `dari ${fmt(qtyPack)} pack terjual`;
+  document.getElementById('profit-ecr').textContent = rp(profitEcr);
+  document.getElementById('profit-ecr-sub').textContent = `dari ${fmt(qtyEcr)} eceran terjual`;
+
+  document.getElementById('profit-modal').style.display = 'flex';
+}
+document.getElementById('profit-modal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MULTI-ITEM INPUT
+// ══════════════════════════════════════════════════════════════════════════════
+let multiItems = []; // array of { id, produk, pck, ecr }
+let activeRowId = null;
+
+function initMultiItems() {
+  multiItems = [];
+  addItemRow();
+}
+
+function addItemRow() {
+  const id = Date.now() + Math.random();
+  multiItems.push({ id, produk: null, pck: 0, ecr: 0 });
+  renderMultiItems();
+  // Focus ke input produk baris baru
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('.mi-produk-input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
+}
+
+function removeItemRow(id) {
+  if (multiItems.length <= 1) { showAlert('Minimal harus ada 1 item!', false); return; }
+  multiItems = multiItems.filter(x => x.id !== id);
+  renderMultiItems();
+  updateMultiTotal();
+}
+
+function renderMultiItems() {
+  const container = document.getElementById('multi-item-list');
+  container.innerHTML = multiItems.map((item, idx) => {
+    const omzet = calcItemOmzet(item);
+    const isEven = idx % 2 === 0;
+    return `<div class="mi-row" id="mi-row-${item.id}" style="padding:10px 10px 8px;background:${isEven ? 'transparent' : 'rgba(255,255,255,0.02)'};border-bottom:1px solid rgba(255,255,255,0.05);">
+      <!-- Baris 1: Nomor + Nama produk + Omzet + hapus -->
+      <div style="display:grid;grid-template-columns:20px 1fr 1fr 26px;gap:6px;align-items:center;margin-bottom:7px;">
+        <div style="font-size:0.72rem;color:var(--gray);font-weight:600;text-align:center;">${idx+1}</div>
+        <div style="position:relative;">
+          <input type="text" class="mi-produk-input" data-id="${item.id}"
+            value="${item.produk ? item.produk.nama : ''}"
+            placeholder="Ketik nama produk..."
+            autocomplete="off"
+            oninput="miShowAutocomplete(this, ${item.id})"
+            onfocus="miShowAutocomplete(this, ${item.id})"
+            style="width:100%;background:var(--black3);border:1px solid rgba(201,168,76,${item.produk ? '0.5' : '0.2'});color:var(--white);border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:0.86rem;outline:none;" />
+          <div class="mi-autocomplete-list" id="mi-ac-${item.id}" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--black2);border:1px solid var(--gold);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;"></div>
+        </div>
+        <div class="mi-omzet-cell" style="font-size:0.8rem;color:${omzet > 0 ? 'var(--gold2)' : 'var(--gray2)'};font-weight:${omzet > 0 ? '600' : '400'};white-space:nowrap;text-align:center;">${omzet > 0 ? rp(omzet) : '–'}</div>
+        <button onclick="removeItemRow(${item.id})" title="Hapus"
+          style="background:none;border:1px solid rgba(229,57,53,0.3);color:#EF9A9A;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">×</button>
+      </div>
+      <!-- Baris 2: Pack + Eceran (sejajar dengan nama & omzet) -->
+      <div style="display:grid;grid-template-columns:20px 1fr 1fr 26px;gap:6px;align-items:center;">
+        <div></div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--gray);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;">Pack</div>
+          <input type="number" class="mi-pck-input" data-id="${item.id}" value="${item.pck}" min="0"
+            oninput="miUpdateQty(${item.id},'pck',this.value)"
+            style="width:100%;text-align:center;background:var(--black3);border:1px solid rgba(201,168,76,0.2);color:var(--white);border-radius:7px;padding:7px 4px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;" />
+        </div>
+        <div>
+          <div style="font-size:0.65rem;color:var(--gray);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.06em;">Eceran</div>
+          <input type="number" class="mi-ecr-input" data-id="${item.id}" value="${item.ecr}" min="0"
+            oninput="miUpdateQty(${item.id},'ecr',this.value)"
+            style="width:100%;text-align:center;background:var(--black3);border:1px solid rgba(201,168,76,0.2);color:var(--white);border-radius:7px;padding:7px 4px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;" />
+        </div>
+        <div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Update count
+  const count = multiItems.length;
+  document.getElementById('multi-item-count').textContent = count + ' item' + (count > 1 ? '' : '');
+  updateMultiTotal();
+}
+
+function calcItemOmzet(item) {
+  if (!item.produk) return 0;
+  const p = item.produk;
+  return (item.pck || 0) * (p.harga_jual_pck || 0) + (item.ecr || 0) * (p.harga_jual_ecr || p.harga_jual_pck || 0);
+}
+
+function miUpdateQty(id, field, val) {
+  const item = multiItems.find(x => x.id === id);
+  if (!item) return;
+  item[field] = parseInt(val) || 0;
+  const omzet = calcItemOmzet(item);
+  const row = document.getElementById('mi-row-' + id);
+  if (row) {
+    const omzetCell = row.querySelector('.mi-omzet-cell');
+    if (omzetCell) {
+      omzetCell.textContent = omzet > 0 ? rp(omzet) : '–';
+      omzetCell.style.color = omzet > 0 ? 'var(--gold2)' : 'var(--gray2)';
+      omzetCell.style.fontWeight = omzet > 0 ? '600' : '400';
+    }
+  }
+  updateMultiTotal();
+}
+
+function updateMultiTotal() {
+  const total = multiItems.reduce((s, item) => s + calcItemOmzet(item), 0);
+  document.getElementById('multi-total-omzet').textContent = rp(total);
+}
+
+function miShowAutocomplete(input, id) {
+  const val = input.value;
+  const listEl = document.getElementById('mi-ac-' + id);
+  if (!val || val.length < 1) { listEl.style.display = 'none'; return; }
   const matches = PRODUCTS.filter(p => p.nama.toLowerCase().includes(val.toLowerCase())).slice(0, 12);
-  if (!matches.length) { list.style.display = 'none'; return; }
-  list.innerHTML = matches.map(p =>
-    `<div class="autocomplete-item" onclick="selectProduct('${p.nama.replace(/'/g,"\\'")}')">
+  if (!matches.length) { listEl.style.display = 'none'; return; }
+  listEl.innerHTML = matches.map(p =>
+    `<div class="autocomplete-item" onmousedown="miSelectProduct(${id}, '${p.nama.replace(/'/g,"\\'")}')">
       ${p.nama} <span style="color:var(--gray);font-size:0.78rem;float:right">${rp(p.harga_jual_pck)}</span>
     </div>`).join('');
-  list.style.display = 'block';
+  listEl.style.display = 'block';
 }
-function selectProduct(nama) {
-  document.getElementById('inp-produk').value = nama;
-  document.getElementById('autocomplete-list').style.display = 'none';
-  selectedProduct = PRODUCTS.find(p => p.nama === nama);
-  updateOmzetPreview();
-}
-function updateOmzetPreview() {
-  const pck = parseInt(document.getElementById('inp-pck').value) || 0;
-  const ecr = parseInt(document.getElementById('inp-ecr').value) || 0;
-  if (!selectedProduct) { document.getElementById('inp-preview-omzet').value = '–'; return; }
-  const omzet = pck * selectedProduct.harga_jual_pck + ecr * (selectedProduct.harga_jual_ecr || selectedProduct.harga_jual_pck);
-  document.getElementById('inp-preview-omzet').value = rp(omzet);
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.autocomplete-wrap'))
-    document.getElementById('autocomplete-list').style.display = 'none';
-});
-document.getElementById('inp-pck').addEventListener('input', updateOmzetPreview);
-document.getElementById('inp-ecr').addEventListener('input', updateOmzetPreview);
 
-// ── SAVE ENTRY ──
-function saveEntry() {
+function miSelectProduct(id, nama) {
+  const item = multiItems.find(x => x.id === id);
+  if (!item) return;
+  item.produk = PRODUCTS.find(p => p.nama === nama);
+  // Update input value
+  const input = document.querySelector(`.mi-produk-input[data-id="${id}"]`);
+  if (input) { input.value = nama; input.style.borderColor = 'rgba(201,168,76,0.5)'; }
+  document.getElementById('mi-ac-' + id).style.display = 'none';
+  updateMultiTotal();
+  // Re-render hanya omzet cell
+  const omzet = calcItemOmzet(item);
+  const row = document.getElementById('mi-row-' + id);
+  if (row) {
+    const omzetCell = row.children[3];
+    omzetCell.textContent = omzet > 0 ? rp(omzet) : '–';
+    omzetCell.style.color = omzet > 0 ? 'var(--gold2)' : 'var(--gray)';
+  }
+}
+
+// Tutup autocomplete saat klik luar
+document.addEventListener('click', e => {
+  if (!e.target.closest('.mi-produk-input') && !e.target.closest('.mi-autocomplete-list'))
+    document.querySelectorAll('.mi-autocomplete-list').forEach(el => el.style.display = 'none');
+});
+
+// ── SAVE ALL ENTRIES ──
+function saveAllEntries() {
   const tanggal = document.getElementById('inp-tanggal').value;
   const bulan = parseInt(document.getElementById('inp-bulan').value);
-  const produkNama = document.getElementById('inp-produk').value.trim();
-  const pck = parseInt(document.getElementById('inp-pck').value) || 0;
-  const ecr = parseInt(document.getElementById('inp-ecr').value) || 0;
 
   if (!tanggal) return showAlert('Pilih tanggal dulu!', false);
-  if (!produkNama) return showAlert('Pilih nama produk!', false);
-  if (!selectedProduct) {
-    selectedProduct = PRODUCTS.find(p => p.nama.toLowerCase() === produkNama.toLowerCase());
-  }
-  if (!selectedProduct) return showAlert('Produk tidak ditemukan di master!', false);
-  if (pck === 0 && ecr === 0) return showAlert('Qty Pack dan Eceran tidak boleh keduanya 0!', false);
 
-  const omzet = pck * selectedProduct.harga_jual_pck + ecr * (selectedProduct.harga_jual_ecr || selectedProduct.harga_jual_pck);
-  const entry = {
-    id: Date.now(),
-    tanggal, bulan,
-    produk: selectedProduct.nama,
-    pck, ecr,
-    hj_pck: selectedProduct.harga_jual_pck,
-    hj_ecr: selectedProduct.harga_jual_ecr || selectedProduct.harga_jual_pck,
-    omzet
-  };
-  salesData.push(entry);
+  const validItems = multiItems.filter(item => item.produk && (item.pck > 0 || item.ecr > 0));
+  if (!validItems.length) return showAlert('Minimal 1 item dengan produk & qty yang valid!', false);
+
+  const invalidItems = multiItems.filter(item => item.produk && item.pck === 0 && item.ecr === 0);
+  if (invalidItems.length) {
+    showAlert(`⚠️ ${invalidItems.length} item dilewati karena qty 0.`, true);
+  }
+
+  validItems.forEach(item => {
+    const p = item.produk;
+    const omzet = (item.pck || 0) * (p.harga_jual_pck || 0) + (item.ecr || 0) * (p.harga_jual_ecr || p.harga_jual_pck || 0);
+    salesData.push({
+      id: Date.now() + Math.random(),
+      tanggal, bulan,
+      produk: p.nama,
+      pck: item.pck || 0,
+      ecr: item.ecr || 0,
+      hj_pck: p.harga_jual_pck || 0,
+      hj_ecr: p.harga_jual_ecr || p.harga_jual_pck || 0,
+      omzet
+    });
+  });
+
   saveData();
-  showAlert('Data berhasil disimpan! ✨', true);
-  clearForm();
+  showAlert(`✅ ${validItems.length} item berhasil disimpan!`, true);
+  clearAllItems();
   renderRecent();
 }
 
-function clearForm() {
-  document.getElementById('inp-tanggal').value = '';
-  document.getElementById('inp-produk').value = '';
-  document.getElementById('inp-pck').value = '0';
-  document.getElementById('inp-ecr').value = '0';
-  document.getElementById('inp-preview-omzet').value = '';
-  selectedProduct = null;
+function clearAllItems() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('inp-tanggal').value = today;
+  document.getElementById('inp-bulan').value = new Date().getMonth();
+  initMultiItems();
 }
+
+// Legacy compat — tidak dipakai lagi tapi jaga-jaga
+function clearForm() { clearAllItems(); }
+function saveEntry() { saveAllEntries(); }
 
 function deleteEntry(id) {
   salesData = salesData.filter(d => d.id !== id);
@@ -1906,7 +2268,7 @@ function saveEditHarga1() {
   if (!pck) { showAlert('Harga Jual Pack wajib diisi!', false); return; }
   PRODUCTS = PRODUCTS.map(p =>
     p.nama === eh1CurrentNama
-      ? { ...p, harga_modal: modal, harga_jual_pck: pck, harga_jual_ecr: ecr }
+      ? { ...p, harga_modal: modal, harga_jual_pck: pck, harga_jual_ecr: ecr, isi_per_pack: p.isi_per_pack || 0 }
       : p
   );
   saveProductPrices();
@@ -1998,6 +2360,7 @@ function saveEditHargaAll() {
       harga_modal:    c.modal ?? p.harga_modal,
       harga_jual_pck: c.pck,
       harga_jual_ecr: c.ecr || 0,
+      isi_per_pack:   p.isi_per_pack || 0,
     };
   });
 
@@ -2369,6 +2732,22 @@ document.getElementById('stok-tanggal').value = new Date().toISOString().split('
 // showPage sudah menangani stok secara langsung - tidak perlu override lagi
 
 
+// ── JAM DIGITAL ──
+const HARI_NAMES = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const BULAN_SINGKAT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function updateClock() {
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const timeEl = document.getElementById('clock-time');
+  const dateEl = document.getElementById('clock-date');
+  if (timeEl) timeEl.textContent = `${hh}:${mm}:${ss}`;
+  if (dateEl) dateEl.textContent = `${HARI_NAMES[now.getDay()]}, ${now.getDate()} ${BULAN_SINGKAT[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
 loadData();
 loadLogo();
 loadStok();
@@ -2379,11 +2758,12 @@ pullFromCSV(true).then(() => {
   // Render ulang halaman aktif setelah data tersedia
   renderDashboard();
 });
-// Set default tanggal ke hari ini
+// Set default tanggal ke hari ini & init multi-item
 const today = new Date().toISOString().split('T')[0];
 document.getElementById('inp-tanggal').value = today;
 const todayMonth = new Date().getMonth();
 document.getElementById('inp-bulan').value = todayMonth;
+initMultiItems();
 // Init month tabs for harian
 document.getElementById('harian-month-tabs').innerHTML = MONTH_NAMES.map((m, i) =>
   `<button class="month-tab ${i === harianMonth ? 'active' : ''}" onclick="setHarianMonth(${i})">${m.substring(0,3)}</button>`
@@ -2395,6 +2775,153 @@ document.getElementById('produk-tbody').innerHTML =
 
 renderDashboard();
 
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// NETWORK STATUS DETECTION
+// ══════════════════════════════════════════════════════════════════════════════
+let networkBannerTimer = null;
+let wasOffline = false;
+
+function showNetworkBanner(type, msg, icon, duration) {
+  const banner = document.getElementById('network-banner');
+  const textEl = document.getElementById('network-banner-text');
+  const iconEl = document.getElementById('network-banner-icon');
+
+  // Reset classes
+  banner.classList.remove('offline', 'slow', 'back-online', 'show');
+  void banner.offsetWidth; // force reflow
+
+  iconEl.textContent = icon;
+  textEl.textContent = msg;
+  banner.classList.add(type, 'show');
+
+  if (networkBannerTimer) clearTimeout(networkBannerTimer);
+  if (duration) {
+    networkBannerTimer = setTimeout(() => {
+      banner.classList.remove('show');
+    }, duration);
+  }
+}
+
+function hideNetworkBanner() {
+  const banner = document.getElementById('network-banner');
+  banner.classList.remove('show');
+}
+
+// ── Offline / Online events ──
+window.addEventListener('offline', () => {
+  wasOffline = true;
+  showNetworkBanner('offline', 'Tidak ada koneksi internet. Data tidak dapat disinkronkan.', '📵', 0);
+});
+
+window.addEventListener('online', () => {
+  if (wasOffline) {
+    wasOffline = false;
+    showNetworkBanner('back-online', 'Koneksi kembali! Menyinkronkan data...', '✅', 4000);
+    // Auto refresh data setelah kembali online
+    setTimeout(() => pullFromCSV(true), 1000);
+  }
+});
+
+// ── Deteksi koneksi lambat via ping ──
+let slowCheckTimer = null;
+function checkConnectionSpeed() {
+  if (!navigator.onLine) return;
+  const start = Date.now();
+  const timeout = 5000;
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), timeout);
+
+  fetch('https://www.google.com/favicon.ico?_=' + Date.now(), {
+    method: 'HEAD', mode: 'no-cors', signal: controller.signal, cache: 'no-store'
+  })
+  .then(() => {
+    clearTimeout(tid);
+    const ms = Date.now() - start;
+    if (ms > 3000) {
+      showNetworkBanner('slow', `Koneksi lambat terdeteksi (${ms}ms). Data mungkin butuh waktu lebih lama.`, '⚠️', 5000);
+    }
+  })
+  .catch(() => {
+    clearTimeout(tid);
+    if (navigator.onLine) {
+      showNetworkBanner('slow', 'Koneksi tidak stabil. Periksa jaringan Anda.', '⚠️', 5000);
+    }
+  });
+}
+
+// Cek kecepatan setiap 30 detik
+slowCheckTimer = setInterval(checkConnectionSpeed, 30000);
+// Cek sekali saat halaman dibuka (delay 3 detik)
+setTimeout(checkConnectionSpeed, 3000);
+
+// Cek status awal
+if (!navigator.onLine) {
+  wasOffline = true;
+  showNetworkBanner('offline', 'Tidak ada koneksi internet. Data tidak dapat disinkronkan.', '📵', 0);
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'qp-cache-v1';
+    self.addEventListener('install', e => {
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      ));
+    });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        fetch(e.request).catch(() => caches.match(e.request))
+      );
+    });
+  `;
+  const swBlob = new Blob([swCode], {type: 'application/javascript'});
+  const swURL  = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swURL).catch(() => {});
+}
+
+// ── PWA: Install prompt ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('pwa-install-btn').style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-install-btn').style.display = 'none';
+  deferredPrompt = null;
+});
+function installPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+}
+</script>
+
+<script>
+// Hide loading screen - pakai DOMContentLoaded + fallback timer
+function hideLoadingScreen() {
+  const ls = document.getElementById('loading-screen');
+  if (!ls || ls._hiding) return;
+  ls._hiding = true;
+  setTimeout(function() {
+    ls.style.transition = 'opacity 1s ease';
+    ls.style.opacity = '0';
+    setTimeout(() => { if (ls.parentNode) ls.parentNode.removeChild(ls); }, 1050);
+  }, 2800);
+}
+
+// Trigger saat DOM siap (lebih cepat dari window.load)
+document.addEventListener('DOMContentLoaded', hideLoadingScreen);
+// Fallback: paksa hilang setelah 8 detik apapun yang terjadi
+setTimeout(hideLoadingScreen, 8000);
 </script>
 </body>
 </html>
