@@ -301,6 +301,13 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
   /* Yearly table */
   #page-tahunan .kpi-grid { grid-template-columns: 1fr; }
 
+  /* Dashboard: jam & filter tetap sejajar di mobile */
+  .dash-topbar-row { flex-direction: row !important; flex-wrap: nowrap !important; }
+  .dash-clock-box { min-width: 120px !important; padding: 8px 10px !important; }
+  .dash-clock-box #clock-time { font-size: 1.2rem !important; }
+  .dash-clock-box #clock-date { font-size: 0.6rem !important; }
+  .dash-topbar-row .filter-group select { min-width: 110px; font-size: 0.8rem; }
+
   /* Bottom nav bar (mobile) */
   .mobile-nav { display: flex; }
 }
@@ -462,6 +469,54 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
 @media (max-width: 768px) {
   #network-banner { bottom: 76px; font-size: 0.78rem; padding: 8px 14px; }
 }
+
+/* ══ ANIMASI GLOBAL ══ */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmerLine {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.anim-fade-up {
+  animation: fadeSlideUp 0.45s cubic-bezier(0.22,1,0.36,1) both;
+}
+.anim-fade-in {
+  animation: fadeSlideIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+.anim-pop {
+  animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+/* Stagger delays untuk elemen berurutan */
+.anim-d1  { animation-delay: 0.05s; }
+.anim-d2  { animation-delay: 0.10s; }
+.anim-d3  { animation-delay: 0.15s; }
+.anim-d4  { animation-delay: 0.20s; }
+.anim-d5  { animation-delay: 0.25s; }
+.anim-d6  { animation-delay: 0.30s; }
+.anim-d7  { animation-delay: 0.35s; }
+.anim-d8  { animation-delay: 0.40s; }
+
+/* KPI card hover lift sudah ada, tambah transition pada chart-card */
+.chart-card { transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; }
+.chart-card:hover { border-color: rgba(201,168,76,0.4); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
+
+/* Table row animasi */
+tbody tr { transition: background 0.15s, opacity 0.2s; }
+
+/* Page transition */
+.page.active { animation: fadeSlideUp 0.38s cubic-bezier(0.22,1,0.36,1) both; }
 </style>
 </head>
 <body>
@@ -614,9 +669,9 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
     <button id="pwa-install-btn" onclick="installPWA()" title="Install sebagai aplikasi"
   style="display:none;align-items:center;gap:6px;background:linear-gradient(135deg,var(--gold),var(--gold3));color:var(--black);font-weight:700;font-size:0.78rem;border:none;cursor:pointer;border-radius:8px;padding:7px 14px;letter-spacing:0.03em;">
-  ⬇ Install App
+  Install App
 </button>
-    <button class="btn-outline" onclick="resetAndPull()" title="Refresh data dari Google Sheets" style="font-size:0.8rem;">↻ REFRESH</button>
+    <button class="btn-outline" onclick="resetAndPull()" title="Refresh data dari Google Sheets" style="font-size:0.8rem;">REFRESH</button>
     <button class="btn-gold" onclick="showPage('input')">+ Input Penjualan</button>
   </div>
 </div>
@@ -631,15 +686,15 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     </div>
   </div>
 
-  <div class="filter-bar" style="margin-bottom:20px;justify-content:space-between;align-items:center;">
+  <div class="filter-bar dash-topbar-row" style="margin-bottom:20px;justify-content:space-between;align-items:center;flex-wrap:nowrap;gap:12px;">
 
     <!-- Jam Digital -->
-    <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:160px;">
+    <div class="dash-clock-box" style="background:var(--black3);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:10px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:140px;flex-shrink:0;">
       <div id="clock-time" style="font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:700;color:var(--gold2);letter-spacing:0.08em;line-height:1;">00:00:00</div>
       <div id="clock-date" style="font-size:0.7rem;color:var(--gray);letter-spacing:0.08em;margin-top:3px;text-transform:uppercase;"></div>
     </div>
 
-    <div class="filter-group">
+    <div class="filter-group" style="flex-shrink:0;">
       <label>Filter Bulan</label>
       <select id="dash-month-filter" onchange="renderDashboard()">
         <option value="all">Semua Bulan</option>
@@ -659,46 +714,24 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
       <div class="kpi-value" id="kpi-omzet">Rp 0</div>
       <div class="kpi-sub" id="kpi-omzet-sub">–</div>
     </div>
-    <div class="kpi-card"><div class="kpi-label">Total Qty Terjual</div><div class="kpi-value" id="kpi-qty">0</div><div class="kpi-sub" id="kpi-qty-sub">–</div></div>
-    <div class="kpi-card"><div class="kpi-label">Jumlah Produk Aktif</div><div class="kpi-value" id="kpi-produk">0</div><div class="kpi-sub">produk terjual</div></div>
-    <div class="kpi-card"><div class="kpi-label">Total Transaksi</div><div class="kpi-value" id="kpi-transaksi">0</div><div class="kpi-sub">entri data</div></div>
+    <div class="kpi-card" onclick="showQtyModal()" style="cursor:pointer;" title="Klik untuk detail qty">
+      <div class="kpi-label">Total Qty Terjual</div>
+      <div class="kpi-value" id="kpi-qty">0</div>
+      <div class="kpi-sub" id="kpi-qty-sub">–</div>
+    </div>
+    <div class="kpi-card" onclick="showProdukModal()" style="cursor:pointer;" title="Klik untuk detail produk">
+      <div class="kpi-label">Jumlah Produk Aktif</div>
+      <div class="kpi-value" id="kpi-produk">0</div>
+      <div class="kpi-sub">produk terjual</div>
+    </div>
+    <div class="kpi-card" onclick="showTransaksiModal()" style="cursor:pointer;" title="Klik untuk detail transaksi">
+      <div class="kpi-label">Total Transaksi</div>
+      <div class="kpi-value" id="kpi-transaksi">0</div>
+      <div class="kpi-sub">entri data</div>
+    </div>
   </div>
 
   <!-- PROFIT MODAL -->
-  <div id="profit-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
-    <div style="background:var(--black2);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:28px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.8);position:relative;">
-      <button onclick="document.getElementById('profit-modal').style.display='none'"
-        style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
-      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:4px;">💰 Detail Keuntungan</div>
-      <div id="profit-modal-period" style="font-size:0.8rem;color:var(--gray);margin-bottom:20px;"></div>
-
-      <!-- Total Keuntungan -->
-      <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
-        <div style="font-size:0.76rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Total Keuntungan Bersih</div>
-        <div id="profit-total" style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--gold2);">Rp 0</div>
-        <div id="profit-margin-pct" style="font-size:0.82rem;color:var(--gray);margin-top:4px;"></div>
-      </div>
-
-      <!-- Keuntungan Pack & Eceran -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-        <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:14px 16px;">
-          <div style="font-size:0.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Keuntungan Pack</div>
-          <div id="profit-pack" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#81C784;">Rp 0</div>
-          <div id="profit-pack-sub" style="font-size:0.76rem;color:var(--gray);margin-top:3px;"></div>
-        </div>
-        <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:14px 16px;">
-          <div style="font-size:0.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Keuntungan Eceran</div>
-          <div id="profit-ecr" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#64B5F6;">Rp 0</div>
-          <div id="profit-ecr-sub" style="font-size:0.76rem;color:var(--gray);margin-top:3px;"></div>
-        </div>
-      </div>
-
-      <!-- Info -->
-      <div style="font-size:0.76rem;color:var(--gray2);text-align:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
-        Dihitung dari: (Harga Jual − Harga Modal) × Qty Terjual
-      </div>
-    </div>
-  </div>
 
   <div class="chart-grid">
     <div class="chart-card wide">
@@ -723,8 +756,12 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <div><h2>Input Penjualan</h2><div class="subtitle">Tambah data penjualan harian</div></div>
   </div>
 
-  <div class="form-card">
-    <h3>Form Input Penjualan</h3>
+  <div class="form-card" id="input-form-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;" onclick="toggleInputForm()">
+      <h3 style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Input Penjualan</h3>
+      <span id="input-form-toggle-icon" style="font-size:1.2rem;color:var(--gold2);transition:transform 0.3s;">▲</span>
+    </div>
+    <div id="input-form-body" style="margin-top:16px;">
     <!-- Tanggal & Bulan (shared untuk semua item) -->
     <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:20px;">
       <div class="form-group">
@@ -764,6 +801,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
         </div>
       </div>
     </div>
+  </div><!-- /input-form-body -->
   </div>
 
   <!-- Recent entries table -->
@@ -865,7 +903,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     </div>
     <div class="filter-group" style="justify-content:flex-end;margin-left:auto;">
       <label style="opacity:0">.</label>
-      <button class="btn-gold" onclick="openEditHargaModal()" style="padding:8px 18px;">✏️ Edit Harga Produk</button>
+      <button class="btn-gold" onclick="openEditHargaModal()" style="padding:8px 18px;">Edit Harga Produk</button>
     </div>
   </div>
   <div class="table-wrap">
@@ -896,37 +934,37 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     <div class="kpi-card"><div class="kpi-label">Stok Habis</div><div class="kpi-value" id="stok-kpi-habis" style="color:#EF9A9A">0</div><div class="kpi-sub">produk</div></div>
   </div>
 
-  <!-- Form Input Stok Masuk -->
-  <div class="form-card" style="margin-bottom:20px">
-    <h3>📥 Input Stok Masuk</h3>
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Tanggal *</label>
-        <input type="date" id="stok-tanggal" />
-      </div>
-      <div class="form-group">
-        <label>Nama Produk *</label>
-        <div class="autocomplete-wrap">
-          <input type="text" id="stok-produk" placeholder="Ketik nama produk..." autocomplete="off" oninput="showStokAutocomplete(this.value)" />
-          <div class="autocomplete-list" id="stok-autocomplete-list" style="display:none"></div>
+  <!-- Form Input Stok Masuk (Multi-Item) -->
+  <div class="form-card" id="stok-form-card" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;" onclick="toggleStokForm()">
+      <h3 style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Input Stok Masuk</h3>
+      <span id="stok-form-toggle-icon" style="font-size:1.2rem;color:var(--gold2);transition:transform 0.3s;">▲</span>
+    </div>
+    <div id="stok-form-body" style="margin-top:16px;">
+      <!-- Tanggal shared -->
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px;">
+        <div class="form-group">
+          <label>Tanggal *</label>
+          <input type="date" id="stok-tanggal" />
+        </div>
+        <div class="form-group">
+          <label>Keterangan Umum</label>
+          <input type="text" id="stok-keterangan-umum" placeholder="Contoh: Restock dari supplier..." />
         </div>
       </div>
-      <div class="form-group">
-        <label>Jumlah Masuk (Pack) * <span id="stok-masuk-preview" style="color:var(--gold2);font-weight:600;"></span></label>
-        <input type="number" id="stok-masuk" value="0" min="0" oninput="updateStokPreview()" />
+      <!-- Multi-item list -->
+      <div id="stok-multi-list" style="border:1px solid rgba(201,168,76,0.2);border-radius:8px;overflow:hidden;margin-bottom:12px;"></div>
+      <!-- Actions -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="btn-outline" onclick="addStokRow()" style="font-size:0.82rem;padding:8px 16px;">+ Tambah Item</button>
+          <span style="font-size:0.82rem;color:var(--gray)" id="stok-item-count">1 item</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-outline" onclick="clearStokForm()">Bersihkan</button>
+          <button class="btn-gold" onclick="saveStokMasukAll()">Simpan Semua</button>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Batas Minimum Stok</label>
-        <input type="number" id="stok-minimum" value="5" min="0" placeholder="Default: 5" />
-      </div>
-      <div class="form-group">
-        <label>Keterangan</label>
-        <input type="text" id="stok-keterangan" placeholder="Contoh: Restock dari supplier..." />
-      </div>
-    </div>
-    <div class="form-actions">
-      <button class="btn-outline" onclick="clearStokForm()">Bersihkan</button>
-      <button class="btn-gold" onclick="saveStokMasuk()">💾 Simpan Stok Masuk</button>
     </div>
   </div>
 
@@ -947,7 +985,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
     </div>
     <div class="filter-group" style="margin-left:auto;justify-content:flex-end;">
       <label style="opacity:0">.</label>
-      <button class="btn-outline" onclick="showRiwayatStok()">📋 Riwayat Masuk</button>
+      <button class="btn-outline" onclick="showRiwayatStok()">Riwayat Masuk</button>
     </div>
   </div>
 
@@ -1055,7 +1093,7 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
       <div style="font-size:0.78rem;color:var(--gray);">✦ Harga pack wajib diisi · Ecr kosong = Pack Only</div>
       <div style="display:flex;gap:8px;">
         <button class="btn-outline" onclick="document.getElementById('edit-harga-modal').style.display='none'">Batal</button>
-        <button class="btn-gold" onclick="saveEditHargaAll()">💾 Simpan Semua</button>
+        <button class="btn-gold" onclick="saveEditHargaAll()">Simpan Semua</button>
       </div>
     </div>
   </div>
@@ -1525,13 +1563,24 @@ function showPage(name) {
   // Sync mobile bottom nav
   setMobileActiveByPage(name);
   currentPage = name;
+  animatePage(document.getElementById('page-' + name));
+  // Minimize form input & stok saat pindah halaman
+  const inputBody = document.getElementById('input-form-body');
+  const inputIcon = document.getElementById('input-form-toggle-icon');
+  if (inputBody) { inputBody.style.display = 'none'; inputFormMinimized = true; }
+  if (inputIcon) { inputIcon.style.transform = 'rotate(180deg)'; }
+  const stokBody = document.getElementById('stok-form-body');
+  const stokIcon = document.getElementById('stok-form-toggle-icon');
+  if (stokBody) { stokBody.style.display = 'none'; stokFormMinimized = true; }
+  if (stokIcon) { stokIcon.style.transform = 'rotate(180deg)'; }
+
   if (name === 'dashboard') renderDashboard();
   else if (name === 'input') renderRecent();
   else if (name === 'harian') initHarian();
   else if (name === 'bulanan') renderBulanan();
   else if (name === 'tahunan') renderTahunan();
   else if (name === 'produk') renderProduk();
-  else if (name === 'stok') { renderStok(); renderStokKPI(); }
+  else if (name === 'stok') { renderStok(); renderStokKPI(); initStokRows(); }
   // Scroll to top on mobile
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1661,8 +1710,10 @@ function showProfitModal() {
   for (const d of data) {
     const prod = PRODUCTS.find(p => p.nama === d.produk);
     if (!prod || !prod.harga_modal) continue;
+    const isiPerPack = (prod.isi_per_pack > 0) ? prod.isi_per_pack : 1;
+    const hargaModalPerPcs = (prod.harga_modal || 0) / isiPerPack;
     const marginPck = (prod.harga_jual_pck || 0) - (prod.harga_modal || 0);
-    const marginEcr = (prod.harga_jual_ecr || prod.harga_jual_pck || 0) - (prod.harga_modal || 0);
+    const marginEcr = (prod.harga_jual_ecr || 0) - hargaModalPerPcs;
     profitPack += marginPck * (d.pck || 0);
     profitEcr  += marginEcr * (d.ecr || 0);
     qtyPack    += d.pck || 0;
@@ -1684,9 +1735,7 @@ function showProfitModal() {
 
   document.getElementById('profit-modal').style.display = 'flex';
 }
-document.getElementById('profit-modal').addEventListener('click', function(e) {
-  if (e.target === this) this.style.display = 'none';
-});
+
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MULTI-ITEM INPUT
@@ -2104,7 +2153,7 @@ function renderProdukPage() {
 
   if (!total) {
     const msg = PRODUCTS.length === 0
-      ? '<div class="empty-state"><div class="icon">📦</div><div>Data produk belum tersedia.<br><span style="font-size:0.82rem;color:var(--gray)">Pastikan sheet "MASTER PRODUK GAS" sudah di-publish ke web, lalu tekan ↻ REFRESH.</span></div></div>'
+      ? '<div class="empty-state"><div class="icon"></div><div>Data produk belum tersedia.<br><span style="font-size:0.82rem;color:var(--gray)">Pastikan sheet "MASTER PRODUK GAS" sudah di-publish ke web, lalu tekan REFRESH.</span></div></div>'
       : '<div class="empty-state"><div>Produk tidak ditemukan</div></div>';
     tbody.innerHTML = `<tr><td colspan="8">${msg}</td></tr>`;
     document.getElementById('produk-pagination').innerHTML = '';
@@ -2507,56 +2556,178 @@ function updateStokPreview() {
 }
 
 // ── Simpan stok masuk ──
-function saveStokMasuk() {
+
+// Toggle minimize form input penjualan
+let inputFormMinimized = false;
+function toggleInputForm() {
+  inputFormMinimized = !inputFormMinimized;
+  const body = document.getElementById('input-form-body');
+  const icon = document.getElementById('input-form-toggle-icon');
+  if (inputFormMinimized) {
+    body.style.display = 'none';
+    icon.style.transform = 'rotate(180deg)';
+  } else {
+    body.style.display = '';
+    icon.style.transform = '';
+  }
+}
+
+// ══ STOK MULTI-ITEM ══
+let stokRows = [];
+let stokRowId = 0;
+
+function initStokRows() {
+  stokRows = [];
+  addStokRow();
+}
+
+function addStokRow() {
+  const id = ++stokRowId;
+  stokRows.push({ id, produk: '', jumlah: 0, minimum: 5 });
+  renderStokRows();
+}
+
+function removeStokRow(id) {
+  if (stokRows.length <= 1) return;
+  stokRows = stokRows.filter(r => r.id !== id);
+  renderStokRows();
+}
+
+function renderStokRows() {
+  const container = document.getElementById('stok-multi-list');
+  if (!container) return;
+  container.innerHTML = stokRows.map((row, idx) => `
+    <div style="padding:14px 16px;border-bottom:${idx < stokRows.length-1 ? '1px solid rgba(201,168,76,0.1)' : 'none'};display:grid;grid-template-columns:1fr 1fr auto auto auto;gap:10px;align-items:end;" id="stok-row-${row.id}">
+      <div class="form-group" style="margin:0">
+        <label style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;">Produk *</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="stok-r-produk-${row.id}" placeholder="Ketik nama produk..." autocomplete="off"
+            value="${row.produk}"
+            oninput="showStokRowAutocomplete(${row.id}, this.value)"
+            style="width:100%"/>
+          <div class="autocomplete-list" id="stok-r-ac-${row.id}" style="display:none"></div>
+        </div>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;">Jumlah (Pack) *</label>
+        <input type="number" id="stok-r-jumlah-${row.id}" value="${row.jumlah||0}" min="0"
+          oninput="updateStokRowPreview(${row.id})"
+          style="width:100%"/>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:0.75rem;color:var(--gray);text-transform:uppercase;">Min Stok</label>
+        <input type="number" id="stok-r-min-${row.id}" value="${row.minimum||5}" min="0"
+          style="width:80px"/>
+      </div>
+      <div style="padding-bottom:2px;font-size:0.8rem;color:var(--gold2);white-space:nowrap;" id="stok-r-preview-${row.id}"></div>
+      <button onclick="removeStokRow(${row.id})" class="btn-danger" style="padding:6px 10px;font-size:0.85rem;align-self:end;${stokRows.length<=1?'opacity:0.3;cursor:not-allowed;':''}">✕</button>
+    </div>`).join('');
+  document.getElementById('stok-item-count').textContent = stokRows.length + ' item';
+}
+
+function showStokRowAutocomplete(rowId, val) {
+  const list = document.getElementById('stok-r-ac-' + rowId);
+  if (!val || val.length < 1) { list.style.display = 'none'; return; }
+  const matches = PRODUCTS.filter(p => p.nama.toLowerCase().includes(val.toLowerCase())).slice(0, 10);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(p =>
+    `<div class="autocomplete-item" onclick="selectStokRowProduct(${rowId}, '${p.nama.replace(/'/g,"\'")}')">
+      ${p.nama}
+      <span style="color:var(--gray);font-size:0.78rem;float:right">Sisa: ${getSisaStok(p.nama)}</span>
+    </div>`).join('');
+  list.style.display = 'block';
+}
+
+function selectStokRowProduct(rowId, nama) {
+  const row = stokRows.find(r => r.id === rowId);
+  if (row) row.produk = nama;
+  document.getElementById('stok-r-produk-' + rowId).value = nama;
+  document.getElementById('stok-r-ac-' + rowId).style.display = 'none';
+  const prod = PRODUCTS.find(p => p.nama === nama);
+  if (prod) {
+    const minEl = document.getElementById('stok-r-min-' + rowId);
+    if (minEl) minEl.value = getMinStok(nama);
+  }
+  updateStokRowPreview(rowId);
+}
+
+function updateStokRowPreview(rowId) {
+  const namaEl   = document.getElementById('stok-r-produk-' + rowId);
+  const jumlahEl = document.getElementById('stok-r-jumlah-' + rowId);
+  const preEl    = document.getElementById('stok-r-preview-' + rowId);
+  if (!namaEl || !jumlahEl || !preEl) return;
+  const nama   = namaEl.value.trim();
+  const jumlah = parseInt(jumlahEl.value) || 0;
+  if (!nama || jumlah <= 0) { preEl.textContent = ''; return; }
+  const prod = PRODUCTS.find(p => p.nama.toLowerCase() === nama.toLowerCase());
+  if (!prod) return;
+  const isi = (prod.isi_per_pack > 0) ? prod.isi_per_pack : 1;
+  preEl.textContent = isi > 1 ? `→ ${fmt(jumlah * isi)} pcs` : '';
+}
+
+function saveStokMasukAll() {
   const tanggal    = document.getElementById('stok-tanggal').value;
-  const produkNama = document.getElementById('stok-produk').value.trim();
-  const jumlah     = parseInt(document.getElementById('stok-masuk').value) || 0;
-  const minimum    = parseInt(document.getElementById('stok-minimum').value) ?? 5;
-  const keterangan = document.getElementById('stok-keterangan').value.trim();
+  const ketUmum    = (document.getElementById('stok-keterangan-umum')?.value || '').trim();
+  if (!tanggal) return showAlert('Pilih tanggal dulu!', false);
 
-  if (!tanggal)     return showAlert('Pilih tanggal dulu!', false);
-  if (!produkNama)  return showAlert('Pilih nama produk!', false);
-  if (jumlah <= 0)  return showAlert('Jumlah stok masuk harus lebih dari 0!', false);
+  let saved = 0, errors = [];
+  for (const row of stokRows) {
+    const produkNama = (document.getElementById('stok-r-produk-' + row.id)?.value || '').trim();
+    const jumlah     = parseInt(document.getElementById('stok-r-jumlah-' + row.id)?.value) || 0;
+    const minimum    = parseInt(document.getElementById('stok-r-min-' + row.id)?.value) ?? 5;
+    if (!produkNama) { errors.push('Ada baris tanpa produk'); continue; }
+    if (jumlah <= 0) { errors.push(`${produkNama}: jumlah harus > 0`); continue; }
+    const produk = PRODUCTS.find(p => p.nama.toLowerCase() === produkNama.toLowerCase());
+    if (!produk) { errors.push(`${produkNama}: tidak ditemukan di master`); continue; }
 
-  // Pastikan produk ada di master
-  const produk = PRODUCTS.find(p => p.nama.toLowerCase() === produkNama.toLowerCase());
-  if (!produk) return showAlert('Produk tidak ditemukan di master!', false);
+    const isiPerPack = (produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
+    const jumlahPcs  = jumlah * isiPerPack;
+    if (!stokData[produk.nama]) stokData[produk.nama] = { masuk: 0, minimum: 5 };
+    stokData[produk.nama].masuk += jumlahPcs;
+    if (minimum > 0) stokData[produk.nama].minimum = minimum;
+    riwayatStok.push({
+      id: Date.now() + saved,
+      tanggal, produk: produk.nama,
+      jumlah, jumlahPcs,
+      keterangan: ketUmum + (isiPerPack > 1 ? ` [${jumlah} pack × ${isiPerPack} = ${jumlahPcs} pcs]` : '')
+    });
+    saved++;
+  }
 
-  // Konversi pack → pcs saat simpan
-  const isiPerPack = (produk.isi_per_pack > 0) ? produk.isi_per_pack : 1;
-  const jumlahPcs = jumlah * isiPerPack;
-
-  // Update stokData (selalu dalam satuan PCS)
-  if (!stokData[produk.nama]) stokData[produk.nama] = { masuk: 0, minimum: 5 };
-  stokData[produk.nama].masuk   += jumlahPcs;
-  // Hanya update minimum jika user mengisi > 0, agar tidak ter-overwrite tidak sengaja
-  if (minimum > 0) stokData[produk.nama].minimum = minimum;
-
-  // Tambah ke riwayat (simpan jumlah pack asli + pcs hasil konversi)
-  riwayatStok.push({
-    id: Date.now(),
-    tanggal, produk: produk.nama,
-    jumlah,        // pack (untuk riwayat yang mudah dibaca)
-    jumlahPcs,     // pcs (untuk audit)
-    keterangan: keterangan + (isiPerPack > 1 ? ` [${jumlah} pack × ${isiPerPack} = ${jumlahPcs} pcs]` : '')
-  });
-
+  if (errors.length) return showAlert('⚠️ ' + errors[0], false);
   saveStok();
-  const info = isiPerPack > 1 ? ` (${jumlah} pack × ${isiPerPack} = ${jumlahPcs} pcs)` : ` (${jumlahPcs} pcs)`;
-  showAlert(`✅ Stok ${produk.nama} +${jumlah} pack${info} berhasil dicatat!`, true);
+  showAlert(`✅ ${saved} item stok berhasil dicatat!`, true);
   clearStokForm();
   renderStok();
   renderStokKPI();
 }
 
+// Backward compat
+function saveStokMasuk() { saveStokMasukAll(); }
+
 function clearStokForm() {
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('stok-tanggal').value   = today;
-  document.getElementById('stok-produk').value    = '';
-  document.getElementById('stok-masuk').value     = '0';
-  document.getElementById('stok-minimum').value   = '5';
-  document.getElementById('stok-keterangan').value = '';
-  selectedStokProduct = null;
+  document.getElementById('stok-tanggal').value = today;
+  const ketEl = document.getElementById('stok-keterangan-umum');
+  if (ketEl) ketEl.value = '';
+  stokRows = [];
+  stokRowId = 0;
+  addStokRow();
+}
+
+// Toggle minimize stok form
+let stokFormMinimized = false;
+function toggleStokForm() {
+  stokFormMinimized = !stokFormMinimized;
+  const body = document.getElementById('stok-form-body');
+  const icon = document.getElementById('stok-form-toggle-icon');
+  if (stokFormMinimized) {
+    body.style.display = 'none';
+    icon.style.transform = 'rotate(180deg)';
+  } else {
+    body.style.display = '';
+    icon.style.transform = '';
+  }
 }
 
 // ── KPI Stok ──
@@ -2614,9 +2785,9 @@ function renderStok() {
   }
 
   const statusBadge = {
-    aman:  `<span class="badge badge-green">✅ Aman</span>`,
-    tipis: `<span class="badge badge-gold">⚠️ Menipis</span>`,
-    habis: `<span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:0.75rem;font-weight:600;background:rgba(229,57,53,0.15);color:#EF9A9A;">❌ Habis</span>`
+    aman:  `<span class="badge badge-green">Aman</span>`,
+    tipis: `<span class="badge badge-gold">Menipis</span>`,
+    habis: `<span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:0.75rem;font-weight:600;background:rgba(229,57,53,0.15);color:#EF9A9A;">Habis</span>`
   };
 
   tbody.innerHTML = slice.map((p, i) => {
@@ -2719,8 +2890,8 @@ function cekNotifikasiStok() {
   const tipis  = PRODUCTS.filter(p => { const s = getSisaStok(p.nama); return s > 0 && s <= getMinStok(p.nama); });
   if (habis.length > 0 || tipis.length > 0) {
     const msg = [
-      habis.length  ? `❌ ${habis.length} produk stok HABIS` : '',
-      tipis.length  ? `⚠️ ${tipis.length} produk stok MENIPIS` : ''
+      habis.length  ? `${habis.length} produk stok HABIS` : '',
+      tipis.length  ? `${tipis.length} produk stok MENIPIS` : ''
     ].filter(Boolean).join(' · ');
     showAlert(msg, false);
   }
@@ -2728,6 +2899,7 @@ function cekNotifikasiStok() {
 
 // Set default tanggal stok
 document.getElementById('stok-tanggal').value = new Date().toISOString().split('T')[0];
+initStokRows();
 
 // showPage sudah menangani stok secara langsung - tidak perlu override lagi
 
@@ -2748,6 +2920,106 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 
+
+// ══ ANIMASI HALAMAN ══
+function animatePage(pageEl) {
+  if (!pageEl) return;
+  // Animate section-header
+  pageEl.querySelectorAll('.section-header').forEach((el, i) => {
+    el.classList.remove('anim-fade-in');
+    void el.offsetWidth;
+    el.classList.add('anim-fade-in');
+    el.style.animationDelay = (i * 0.06) + 's';
+  });
+  // Animate kpi-cards with stagger
+  pageEl.querySelectorAll('.kpi-card').forEach((el, i) => {
+    el.classList.remove('anim-pop');
+    void el.offsetWidth;
+    el.classList.add('anim-pop');
+    el.style.animationDelay = (0.05 + i * 0.07) + 's';
+  });
+  // Animate chart-cards
+  pageEl.querySelectorAll('.chart-card').forEach((el, i) => {
+    el.classList.remove('anim-fade-up');
+    void el.offsetWidth;
+    el.classList.add('anim-fade-up');
+    el.style.animationDelay = (0.1 + i * 0.08) + 's';
+  });
+  // Animate filter-bar
+  pageEl.querySelectorAll('.filter-bar').forEach((el, i) => {
+    el.classList.remove('anim-fade-up');
+    void el.offsetWidth;
+    el.classList.add('anim-fade-up');
+    el.style.animationDelay = (0.08 + i * 0.05) + 's';
+  });
+  // Animate form-card
+  pageEl.querySelectorAll('.form-card').forEach((el, i) => {
+    el.classList.remove('anim-fade-up');
+    void el.offsetWidth;
+    el.classList.add('anim-fade-up');
+    el.style.animationDelay = (0.1 + i * 0.08) + 's';
+  });
+  // Animate table-wrap
+  pageEl.querySelectorAll('.table-wrap').forEach((el, i) => {
+    el.classList.remove('anim-fade-up');
+    void el.offsetWidth;
+    el.classList.add('anim-fade-up');
+    el.style.animationDelay = (0.15 + i * 0.07) + 's';
+  });
+}
+
+
+// ══ MODAL: QTY DETAIL ══
+function showQtyModal() {
+  const mFilter = document.getElementById('dash-month-filter').value;
+  const data = getFilteredData(mFilter === 'all' ? null : mFilter);
+  const totalPck = data.reduce((s,d) => s + (d.pck||0), 0);
+  const totalEcr = data.reduce((s,d) => s + (d.ecr||0), 0);
+  const period = mFilter === 'all' ? 'Semua Bulan' : MONTH_NAMES[parseInt(mFilter)];
+  document.getElementById('qty-modal-period').textContent = 'Periode: ' + period;
+  document.getElementById('qty-modal-pack').textContent = fmt(totalPck);
+  document.getElementById('qty-modal-ecr').textContent = fmt(totalEcr);
+  document.getElementById('qty-modal-total').textContent = fmt(totalPck + totalEcr);
+  document.getElementById('qty-modal').style.display = 'flex';
+}
+
+// ══ MODAL: PRODUK AKTIF DETAIL ══
+function showProdukModal() {
+  const mFilter = document.getElementById('dash-month-filter').value;
+  const data = getFilteredData(mFilter === 'all' ? null : mFilter);
+  const period = mFilter === 'all' ? 'Semua Bulan' : MONTH_NAMES[parseInt(mFilter)];
+  document.getElementById('produk-modal-period').textContent = 'Periode: ' + period;
+  const prodMap = aggregateByProduct(data);
+  const sorted = Object.entries(prodMap).sort((a,b) => (b[1].qty - a[1].qty));
+  document.getElementById('produk-modal-tbody').innerHTML = sorted.map(([nama, v], i) =>
+    `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:8px 12px;color:var(--gold-pale);font-weight:500;">${nama}</td>
+      <td style="padding:8px 12px;text-align:right;color:var(--white);">${fmt(v.pck)}</td>
+      <td style="padding:8px 12px;text-align:right;color:#64B5F6;">${fmt(v.ecr)}</td>
+      <td style="padding:8px 12px;text-align:right;color:var(--gold2);font-weight:600;">${fmt(v.qty)}</td>
+    </tr>`).join('');
+  document.getElementById('produk-modal').style.display = 'flex';
+}
+
+// ══ MODAL: TRANSAKSI DETAIL ══
+function showTransaksiModal() {
+  const mFilter = document.getElementById('dash-month-filter').value;
+  const data = getFilteredData(mFilter === 'all' ? null : mFilter);
+  const period = mFilter === 'all' ? 'Semua Bulan' : MONTH_NAMES[parseInt(mFilter)];
+  document.getElementById('transaksi-modal-period').textContent = 'Periode: ' + period;
+  const itemPack = data.filter(d => (d.pck||0) > 0).length;
+  const itemEcr  = data.filter(d => (d.ecr||0) > 0).length;
+  document.getElementById('transaksi-modal-pack').textContent = fmt(itemPack);
+  document.getElementById('transaksi-modal-ecr').textContent = fmt(itemEcr);
+  document.getElementById('transaksi-modal').style.display = 'flex';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  ['qty-modal','produk-modal','transaksi-modal','profit-modal'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', function(e){ if(e.target===this) this.style.display='none'; });
+  });
+});
 loadData();
 loadLogo();
 loadStok();
@@ -2923,5 +3195,107 @@ document.addEventListener('DOMContentLoaded', hideLoadingScreen);
 // Fallback: paksa hilang setelah 8 detik apapun yang terjadi
 setTimeout(hideLoadingScreen, 8000);
 </script>
+
+<!-- MODAL: QTY DETAIL -->
+<div id="qty-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--black2);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:28px;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.8);position:relative;">
+    <button onclick="document.getElementById('qty-modal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;">×</button>
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:4px;">Detail Qty Terjual</div>
+    <div id="qty-modal-period" style="font-size:0.8rem;color:var(--gray);margin-bottom:20px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:0.74rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Qty Pack</div>
+        <div id="qty-modal-pack" style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--gold2);">0</div>
+        <div style="font-size:0.74rem;color:var(--gray);margin-top:4px;">pack terjual</div>
+      </div>
+      <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:0.74rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Qty Eceran</div>
+        <div id="qty-modal-ecr" style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:#64B5F6;">0</div>
+        <div style="font-size:0.74rem;color:var(--gray);margin-top:4px;">eceran terjual</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:12px;text-align:center;">
+      <div style="font-size:0.74rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;">Total</div>
+      <div id="qty-modal-total" style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--gold2);">0</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PRODUK AKTIF DETAIL -->
+<div id="produk-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--black2);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:28px;width:90%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.8);position:relative;">
+    <button onclick="document.getElementById('produk-modal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;">×</button>
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:4px;">Produk Aktif</div>
+    <div id="produk-modal-period" style="font-size:0.8rem;color:var(--gray);margin-bottom:16px;"></div>
+    <div style="overflow-y:auto;flex:1;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        <thead><tr>
+          <th style="background:var(--black3);color:var(--gold2);padding:8px 12px;text-align:left;font-size:0.78rem;position:sticky;top:0;">Produk</th>
+          <th style="background:var(--black3);color:var(--gold2);padding:8px 12px;text-align:right;font-size:0.78rem;position:sticky;top:0;">Pack</th>
+          <th style="background:var(--black3);color:var(--gold2);padding:8px 12px;text-align:right;font-size:0.78rem;position:sticky;top:0;">Eceran</th>
+          <th style="background:var(--black3);color:var(--gold2);padding:8px 12px;text-align:right;font-size:0.78rem;position:sticky;top:0;">Total Qty</th>
+        </tr></thead>
+        <tbody id="produk-modal-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TRANSAKSI DETAIL -->
+<div id="transaksi-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+  <div style="background:var(--black2);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:28px;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.8);position:relative;">
+    <button onclick="document.getElementById('transaksi-modal').style.display='none'" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;">×</button>
+    <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:4px;">Detail Transaksi</div>
+    <div id="transaksi-modal-period" style="font-size:0.8rem;color:var(--gray);margin-bottom:20px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:0.74rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Item Transaksi Pack</div>
+        <div id="transaksi-modal-pack" style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--gold2);">0</div>
+        <div style="font-size:0.74rem;color:var(--gray);margin-top:4px;">item</div>
+      </div>
+      <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:0.74rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Item Transaksi Eceran</div>
+        <div id="transaksi-modal-ecr" style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:#64B5F6;">0</div>
+        <div style="font-size:0.74rem;color:var(--gray);margin-top:4px;">item</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <div id="profit-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+    <div style="background:var(--black2);border:1px solid rgba(201,168,76,0.3);border-radius:16px;padding:28px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.8);position:relative;">
+      <button onclick="document.getElementById('profit-modal').style.display='none'"
+        style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--gray);font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
+      <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--gold2);margin-bottom:4px;">Detail Keuntungan</div>
+      <div id="profit-modal-period" style="font-size:0.8rem;color:var(--gray);margin-bottom:20px;"></div>
+
+      <!-- Total Keuntungan -->
+      <div style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:10px;padding:16px 18px;margin-bottom:16px;">
+        <div style="font-size:0.76rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Total Keuntungan Bersih</div>
+        <div id="profit-total" style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--gold2);">Rp 0</div>
+        <div id="profit-margin-pct" style="font-size:0.82rem;color:var(--gray);margin-top:4px;"></div>
+      </div>
+
+      <!-- Keuntungan Pack & Eceran -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Keuntungan Pack</div>
+          <div id="profit-pack" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#81C784;">Rp 0</div>
+          <div id="profit-pack-sub" style="font-size:0.76rem;color:var(--gray);margin-top:3px;"></div>
+        </div>
+        <div style="background:var(--black3);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:14px 16px;">
+          <div style="font-size:0.72rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">Keuntungan Eceran</div>
+          <div id="profit-ecr" style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#64B5F6;">Rp 0</div>
+          <div id="profit-ecr-sub" style="font-size:0.76rem;color:var(--gray);margin-top:3px;"></div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div style="font-size:0.76rem;color:var(--gray2);text-align:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
+        Pack: (Harga Jual Pack − Harga Modal) × Qty · Eceran: (Harga Jual Ecr − Harga Modal÷Isi) × Qty
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
