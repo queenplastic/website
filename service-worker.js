@@ -1,4 +1,4 @@
-const CACHE_NAME = "queenplastic-v7";
+const CACHE_NAME = "queenplastic-v8";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
