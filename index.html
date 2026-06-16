@@ -78,9 +78,13 @@ body.light-mode tbody tr:hover { background: rgba(184,134,11,0.07); }
 body.light-mode ::-webkit-scrollbar-track { background: #EEEDE8; }
 
 /* ── THEME TRANSITION ── */
-body, body * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
+.topbar, .kpi-card, .chart-card, .filter-bar, .form-card,
+.table-wrap, table, thead th, tbody td, .month-tab,
+.btn-gold, .btn-outline, .btn-danger, .nav-btn,
+.alert, .autocomplete-list, .autocomplete-item,
+.page-btn, .mobile-nav, .mobile-nav-btn,
+select, input[type="text"], input[type="number"], input[type="date"],
+body { transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
 
 /* ── THEME TOGGLE BUTTON ── */
 #theme-toggle-btn {
@@ -2225,8 +2229,4 @@ function renderBulananPage() {
   const paginated = prods.slice(start, start + BULANAN_PER_PAGE);
 
   const wrap = document.getElementById('bulanan-table-wrap');
-  if (!prods.length) { wrap.innerHTML = `<div class="empty-state"><div>Tidak ada data</div></div>`; return; }
-
-  const monthCols = MONTH_NAMES.map(m => `<th class="num" style="min-width:90px">${m.substring(0,3)}<br><span style="font-weight:400;font-size:0.74rem">Omzet</span></th>`).join('');
-  const rows = paginated.map((p, i) => {
-    const totalOmzet = p.omzet.re
+  if (!prods.length) { wrap.innerHTML = `<div class="empty-s
