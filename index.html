@@ -103,6 +103,36 @@ select, input[type="text"], input[type="number"], input[type="date"]
 }
 #theme-toggle-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
 body.light-mode #theme-toggle-btn { border-color: rgba(184,134,11,0.4); }
+
+#music-toggle-btn {
+  background: none;
+  border: 1px solid rgba(201,168,76,0.4);
+  color: var(--gold2);
+  cursor: pointer;
+  border-radius: 8px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.35rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  position: relative;
+}
+#music-toggle-btn:hover { background: var(--gold-dim); border-color: var(--gold); }
+#music-toggle-btn.playing { border-color: var(--gold); background: var(--gold-dim); }
+#music-toggle-btn.playing::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 10px;
+  border: 1px solid rgba(201,168,76,0.35);
+  animation: music-pulse 2s ease-in-out infinite;
+}
+@keyframes music-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0; transform: scale(1.25); }
+}
+body.light-mode #music-toggle-btn { border-color: rgba(184,134,11,0.4); }
+body.light-mode #music-toggle-btn.playing { background: rgba(184,134,11,0.12); border-color: var(--gold); }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'DM Sans', sans-serif;
@@ -469,11 +499,160 @@ tbody td.product-name { font-weight: 500; color: var(--gold-pale); }
 
 @media (min-width: 769px) {
   .mobile-nav { display: none !important; }
+
+  /* ── Sembunyikan topbar-row2 di PC ── */
+  .topbar-row2 { display: none !important; }
+
+  /* ── Max-width & centering halaman ── */
+  .page { max-width: 1400px; margin: 0 auto; }
+
+  /* ── KPI grid fix 4 kolom di PC ── */
+  .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+
+  /* ── Chart grid: 2 kolom proporsional di PC ── */
+  .chart-grid { grid-template-columns: 1fr 1fr; gap: 24px; }
 }
 
 /* ── EMPTY STATE ── */
 .empty-state { text-align: center; padding: 60px 20px; color: var(--gray); }
 .empty-state .icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.5; }
+
+/* ── ARUS KAS ── */
+.ak-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.ak-summary-grid-row2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+  margin-top: -8px;
+}
+.ak-card {
+  background: var(--black2);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.ak-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.ak-card.pemasukan::before  { background: linear-gradient(90deg,#4CAF50,#81C784); }
+.ak-card.pengeluaran::before { background: linear-gradient(90deg,#E53935,#EF9A9A); }
+.ak-card.saldo::before      { background: linear-gradient(90deg,var(--gold),var(--gold3)); }
+.ak-card.saldo-untung::before { background: linear-gradient(90deg,#00897B,#4DB6AC); }
+.ak-card.saldo-pribadi::before { background: linear-gradient(90deg,#5C6BC0,#9FA8DA); }
+.ak-card-label { font-size:0.76rem; color:var(--gray); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+.ak-card-value { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; line-height:1; }
+.ak-card.pemasukan .ak-card-value   { color:#81C784; }
+.ak-card.pengeluaran .ak-card-value { color:#EF9A9A; }
+.ak-card.saldo .ak-card-value       { color:var(--gold2); }
+.ak-card.saldo-untung .ak-card-value  { color:#4DB6AC; }
+.ak-card.saldo-pribadi .ak-card-value { color:#9FA8DA; }
+.ak-card-sub { font-size:0.76rem; color:var(--gray); margin-top:5px; }
+
+.ak-tipe-toggle {
+  display: flex;
+  background: var(--black3);
+  border-radius: 8px;
+  border: 1px solid rgba(201,168,76,0.2);
+  overflow: hidden;
+  width: fit-content;
+}
+.ak-tipe-btn {
+  padding: 8px 20px;
+  font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; border: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+.ak-tipe-btn.pemasukan.active { background: rgba(76,175,80,0.85); color: #fff; }
+.ak-tipe-btn.pengeluaran.active { background: rgba(229,57,53,0.85); color: #fff; }
+.ak-tipe-btn:not(.active) { background: transparent; color: var(--gray); }
+
+.ak-badge-pemasukan {
+  display:inline-block; padding:3px 9px; border-radius:20px;
+  font-size:0.73rem; font-weight:600;
+  background:rgba(76,175,80,0.15); color:#81C784;
+}
+.ak-badge-pengeluaran {
+  display:inline-block; padding:3px 9px; border-radius:20px;
+  font-size:0.73rem; font-weight:600;
+  background:rgba(229,57,53,0.15); color:#EF9A9A;
+}
+
+@media (max-width: 768px) {
+  /* KPI grid: pemasukan & pengeluaran 2 kolom, saldo full width */
+  .ak-summary-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ak-summary-grid-row2 {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+    margin-top: 0;
+  }
+  .ak-card.saldo {
+    grid-column: 1 / -1;
+  }
+  .ak-card {
+    padding: 12px 14px;
+  }
+  .ak-card-value {
+    font-size: 1.15rem;
+  }
+  .ak-card-sub {
+    font-size: 0.68rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Tipe toggle full width di mobile */
+  .ak-tipe-toggle {
+    width: 100%;
+  }
+  .ak-tipe-btn {
+    flex: 1;
+    padding: 9px 8px;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  /* Form grid jadi 1 kolom di mobile */
+  #page-aruskas .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  /* Chart height lebih kecil di mobile */
+  #chart-aruskas {
+    max-height: 200px !important;
+  }
+
+  /* Tabel arus kas: sembunyikan kolom keterangan di mobile */
+  .ak-col-ket {
+    display: none;
+  }
+
+  /* Filter bar arus kas jadi kolom */
+  #page-aruskas .filter-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  #page-aruskas .filter-bar select {
+    width: 100%;
+    min-width: unset;
+  }
+}
 
 /* ── PRODUCT SEARCH DROPDOWN ── */
 .autocomplete-wrap { position: relative; }
@@ -594,6 +773,123 @@ tbody tr { transition: background 0.15s, opacity 0.2s; }
 </style>
 </head>
 <body>
+
+<!-- ENTRY OVERLAY — klik untuk masuk & autoplay musik -->
+<div id="entry-overlay" style="position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at center,#1A1500 0%,#0A0A0A 75%);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;" onclick="enterSite()">
+  <style>
+    @keyframes eo-float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @keyframes eo-fadein   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes eo-pulse-ring {
+      0%   { transform:scale(1);   opacity:0.7; }
+      100% { transform:scale(1.9); opacity:0;   }
+    }
+    @keyframes eo-shimmer-text {
+      0%,100% { background-position:0% 50%; }
+      50%     { background-position:100% 50%; }
+    }
+    @keyframes eo-particle {
+      0%   { transform:translateY(0) scale(1);   opacity:0; }
+      15%  { opacity:1; }
+      85%  { opacity:0.5; }
+      100% { transform:translateY(-100px) scale(0); opacity:0; }
+    }
+    #entry-overlay .eo-logo-wrap {
+      position:relative;
+      width:160px;height:160px;
+      display:flex;align-items:center;justify-content:center;
+      margin-bottom:36px;
+      animation:eo-float 4s ease-in-out infinite, eo-fadein 0.8s ease 0.1s both;
+    }
+    #entry-overlay .eo-ring {
+      position:absolute;inset:0;border-radius:50%;
+      border:2px solid rgba(201,168,76,0.6);
+      animation:eo-pulse-ring 2s ease-out infinite;
+    }
+    #entry-overlay .eo-ring2 {
+      position:absolute;inset:0;border-radius:50%;
+      border:2px solid rgba(201,168,76,0.4);
+      animation:eo-pulse-ring 2s ease-out infinite 0.7s;
+    }
+    #entry-overlay .eo-logo {
+      width:130px;height:130px;border-radius:50%;overflow:hidden;
+      border:2px solid rgba(201,168,76,0.6);
+      box-shadow:0 0 40px rgba(201,168,76,0.5),0 0 80px rgba(201,168,76,0.2);
+    }
+    #entry-overlay .eo-brand {
+      font-family:'Playfair Display',serif;
+      font-size:1.9rem;font-weight:700;letter-spacing:0.12em;
+      background:linear-gradient(90deg,#C9A84C,#F0D47A,#C9A84C,#E8C56A);
+      background-size:300% 300%;
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+      animation:eo-shimmer-text 3s ease infinite, eo-fadein 0.8s ease 0.3s both;
+      margin-bottom:6px;
+    }
+    #entry-overlay .eo-sub {
+      font-size:0.65rem;letter-spacing:0.3em;text-transform:uppercase;
+      color:rgba(201,168,76,0.5);
+      animation:eo-fadein 0.8s ease 0.5s both;
+      margin-bottom:52px;
+    }
+    #entry-overlay .eo-btn {
+      position:relative;
+      background:linear-gradient(135deg,#C9A84C,#F0D47A,#C9A84C);
+      background-size:200% 200%;
+      color:#0F0F0F;
+      font-family:'Playfair Display',serif;
+      font-size:1rem;font-weight:700;
+      letter-spacing:0.18em;text-transform:uppercase;
+      border:none;border-radius:50px;
+      padding:14px 48px;
+      cursor:pointer;
+      box-shadow:0 0 24px rgba(201,168,76,0.5),0 4px 20px rgba(0,0,0,0.4);
+      animation:eo-shimmer-text 3s ease infinite, eo-fadein 0.8s ease 0.7s both;
+      transition:transform 0.15s,box-shadow 0.15s;
+    }
+    #entry-overlay .eo-btn:hover {
+      transform:scale(1.06);
+      box-shadow:0 0 40px rgba(201,168,76,0.8),0 6px 28px rgba(0,0,0,0.5);
+    }
+    #entry-overlay .eo-hint {
+      margin-top:18px;
+      font-size:0.63rem;letter-spacing:0.2em;text-transform:uppercase;
+      color:rgba(201,168,76,0.3);
+      animation:eo-fadein 1s ease 1.2s both;
+    }
+    #entry-overlay.closing {
+      transition:opacity 0.7s ease;
+      opacity:0;
+      pointer-events:none;
+    }
+  </style>
+
+  <!-- Partikel emas -->
+  <div style="position:absolute;inset:0;pointer-events:none;">
+    <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.6);left:12%;top:30%;animation:eo-particle 3s ease-in-out infinite 0s;"></div>
+    <div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(240,212,122,0.5);left:27%;top:55%;animation:eo-particle 4s ease-in-out infinite 0.5s;"></div>
+    <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(201,168,76,0.4);left:44%;top:22%;animation:eo-particle 3.5s ease-in-out infinite 1s;"></div>
+    <div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(240,212,122,0.7);left:61%;top:68%;animation:eo-particle 4.2s ease-in-out infinite 0.3s;"></div>
+    <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.5);left:78%;top:40%;animation:eo-particle 3.8s ease-in-out infinite 0.8s;"></div>
+    <div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(240,212,122,0.4);left:88%;top:75%;animation:eo-particle 3.2s ease-in-out infinite 1.5s;"></div>
+    <div style="position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,0.6);left:20%;top:80%;animation:eo-particle 4.5s ease-in-out infinite 0.6s;"></div>
+    <div style="position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(240,212,122,0.5);left:65%;top:18%;animation:eo-particle 3.6s ease-in-out infinite 1.2s;"></div>
+  </div>
+
+  <!-- Logo -->
+  <div class="eo-logo-wrap">
+    <div class="eo-ring"></div>
+    <div class="eo-ring2"></div>
+    <div class="eo-logo">
+      <img src="https://raw.githubusercontent.com/queenplastic/website/cbabede21fe6074df59177335d1d3e2de67e9286/logo.png" style="width:100%;height:100%;object-fit:cover;">
+    </div>
+  </div>
+
+  <!-- Teks brand -->
+  <div class="eo-brand">Queen Plastic</div>
+  <div class="eo-sub">Dashboard Penjualan</div>
+
+  <div class="eo-hint" style="color:rgba(201,168,76,0.55);font-size:0.72rem;">✦ &nbsp;Ketuk di mana saja untuk masuk&nbsp; ✦</div>
+</div>
 
 <!-- LOADING SCREEN -->
 <div id="loading-screen" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center, #1A1500 0%, #0F0F0F 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;">
@@ -739,6 +1035,7 @@ tbody tr { transition: background 0.15s, opacity 0.2s; }
       <button class="nav-btn" onclick="showPage('tahunan')">Rekapan Tahunan</button>
       <button class="nav-btn" onclick="showPage('produk')">Produk</button>
       <button class="nav-btn" onclick="showPage('stok')">Stok</button>
+      <button class="nav-btn" onclick="showPage('aruskas')">Arus Kas</button>
     </nav>
     <div style="display:flex;align-items:center;gap:10px;">
       <div id="gsync-indicator" style="display:flex;align-items:center;padding:0 8px;"></div>
@@ -746,6 +1043,7 @@ tbody tr { transition: background 0.15s, opacity 0.2s; }
         style="display:none;align-items:center;gap:6px;background:linear-gradient(135deg,var(--gold),var(--gold3));color:var(--black);font-weight:700;font-size:0.78rem;border:none;cursor:pointer;border-radius:8px;padding:7px 14px;letter-spacing:0.03em;">
         Install App
       </button>
+      <button id="music-toggle-btn" onclick="toggleMusic()" title="Putar / Pause musik">♪</button>
       <button id="theme-toggle-btn" onclick="toggleTheme()" title="Ganti mode terang/gelap">🌙</button>
       <button class="btn-gold" onclick="resetAndPull()" title="Refresh data dari Google Sheets" style="font-size:0.8rem;">REFRESH</button>
     </div>
@@ -1316,6 +1614,155 @@ tbody tr { transition: background 0.15s, opacity 0.2s; }
   </div>
 </div>
 
+<!-- PAGE: ARUS KAS -->
+<div id="page-aruskas" class="page">
+  <div class="section-header">
+    <div class="gold-line"></div>
+    <div><h2>Arus Kas</h2><div class="subtitle">Pemasukan, pengeluaran & saldo bersih</div></div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="ak-summary-grid" id="ak-kpi-grid">
+    <div class="ak-card pemasukan">
+      <div class="ak-card-label">Total Pemasukan</div>
+      <div class="ak-card-value" id="ak-kpi-masuk">Rp 0</div>
+      <div class="ak-card-sub" id="ak-kpi-masuk-sub">omzet + tambahan modal</div>
+    </div>
+    <div class="ak-card pengeluaran">
+      <div class="ak-card-label">Total Pengeluaran</div>
+      <div class="ak-card-value" id="ak-kpi-keluar">Rp 0</div>
+      <div class="ak-card-sub" id="ak-kpi-keluar-sub">operasional + stok + pribadi</div>
+    </div>
+    <div class="ak-card saldo">
+      <div class="ak-card-label">Saldo Kas</div>
+      <div class="ak-card-value" id="ak-kpi-saldo">Rp 0</div>
+      <div class="ak-card-sub" id="ak-kpi-saldo-sub">pemasukan − pengeluaran</div>
+    </div>
+  </div>
+
+  <!-- KPI Cards Baris 2 -->
+  <div class="ak-summary-grid-row2">
+    <div class="ak-card saldo-untung">
+      <div class="ak-card-label">Saldo Keuntungan</div>
+      <div class="ak-card-value" id="ak-kpi-untung">Rp 0</div>
+      <div class="ak-card-sub" id="ak-kpi-untung-sub">profit − stok − operasional</div>
+    </div>
+    <div class="ak-card saldo-pribadi">
+      <div class="ak-card-label">Saldo Pribadi</div>
+      <div class="ak-card-value" id="ak-kpi-pribadi">Rp 0</div>
+      <div class="ak-card-sub" id="ak-kpi-pribadi-sub">keuntungan − pengeluaran pribadi</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div class="chart-title" style="margin-bottom:0">Arus Kas Bulanan</div>
+      <select id="ak-chart-year" onchange="renderAKChart()"
+        style="background:var(--black3);border:1px solid rgba(201,168,76,0.25);color:var(--white);border-radius:8px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;">
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <canvas id="chart-aruskas" style="max-height:260px"></canvas>
+  </div>
+
+  <!-- Form Input -->
+  <div class="form-card" id="ak-form-card" style="margin-bottom:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;" onclick="toggleAKForm()">
+      <h3 style="margin-bottom:0;border-bottom:none;padding-bottom:0;">Input Transaksi</h3>
+      <span id="ak-form-toggle-icon" style="font-size:1.2rem;color:var(--gold2);transition:transform 0.3s;">▲</span>
+    </div>
+    <div id="ak-form-body" style="margin-top:16px;">
+      <!-- Tipe toggle -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:0.78rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Tipe Transaksi *</div>
+        <div class="ak-tipe-toggle">
+          <button class="ak-tipe-btn pemasukan active" id="ak-btn-masuk" onclick="setAKTipe('PEMASUKAN')">⬆ Pemasukan</button>
+          <button class="ak-tipe-btn pengeluaran" id="ak-btn-keluar" onclick="setAKTipe('PENGELUARAN')">⬇ Pengeluaran</button>
+        </div>
+      </div>
+
+      <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div class="form-group">
+          <label>Tanggal *</label>
+          <input type="date" id="ak-tanggal" style="width:100%" />
+        </div>
+        <div class="form-group">
+          <label>Kategori *</label>
+          <select id="ak-kategori" style="width:100%" onchange="renderAKKategoriInfo()">
+            <option value="">-- Pilih --</option>
+            <!-- diisi dinamis sesuai tipe -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Jumlah (Rp) *</label>
+          <input type="number" id="ak-jumlah" min="0" step="500" placeholder="0" style="width:100%" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Keterangan</label>
+        <input type="text" id="ak-keterangan" placeholder="Contoh: Beli stok kantong plastik dari supplier..." style="width:100%" />
+      </div>
+      <div id="ak-kategori-info" style="font-size:0.8rem;color:var(--gray);margin-bottom:12px;padding:8px 12px;background:var(--black3);border-radius:8px;display:none;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn-outline" onclick="clearAKForm()">Bersihkan</button>
+        <button class="btn-gold" onclick="saveAKEntry()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Tabel -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label>Filter Bulan</label>
+      <select id="ak-filter-bulan" onchange="renderAKTable()">
+        <option value="all">Semua Bulan</option>
+        <option value="0">Januari</option><option value="1">Februari</option>
+        <option value="2">Maret</option><option value="3">April</option>
+        <option value="4">Mei</option><option value="5">Juni</option>
+        <option value="6">Juli</option><option value="7">Agustus</option>
+        <option value="8">September</option><option value="9">Oktober</option>
+        <option value="10">November</option><option value="11">Desember</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Filter Tipe</label>
+      <select id="ak-filter-tipe" onchange="renderAKTable()">
+        <option value="all">Semua</option>
+        <option value="PEMASUKAN">Pemasukan</option>
+        <option value="PENGELUARAN">Pengeluaran</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Filter Kategori</label>
+      <select id="ak-filter-kategori" onchange="renderAKTable()">
+        <option value="all">Semua Kategori</option>
+        <option value="Omzet">Omzet</option>
+        <option value="Tambahan Modal">Tambahan Modal</option>
+        <option value="Beli Stok">Beli Stok</option>
+        <option value="Operasional">Operasional</option>
+        <option value="Pribadi">Pribadi</option>
+        <option value="Lainnya">Lainnya</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Tanggal</th>
+        <th>Tipe</th>
+        <th>Kategori</th>
+        <th class="ak-col-ket">Keterangan</th>
+        <th class="num">Jumlah</th>
+        <th>Aksi</th>
+      </tr></thead>
+      <tbody id="ak-tbody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="ak-pagination"></div>
+</div>
+
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mobile-nav" id="mobile-nav">
   <button class="mobile-nav-btn active" data-page="dashboard" onclick="showPage('dashboard');setMobileActive(this)">
@@ -1345,6 +1792,10 @@ tbody tr { transition: background 0.15s, opacity 0.2s; }
   <button class="mobile-nav-btn" data-page="stok" onclick="showPage('stok');setMobileActive(this)">
     <span class="mnav-icon">⌸</span>
     <span class="mnav-label">Stok</span>
+  </button>
+  <button class="mobile-nav-btn" data-page="aruskas" onclick="showPage('aruskas');setMobileActive(this)">
+    <span class="mnav-icon" style="font-size:1rem;font-weight:700;font-family:'Playfair Display',serif;">Rp</span>
+    <span class="mnav-label">Kas</span>
   </button>
 </nav>
 
@@ -1573,6 +2024,7 @@ async function fetchStokCSV() {
         tanggal:    r['tanggal'].trim(),
         produk:     r['produk'].trim(),
         jumlah:     cleanNum(r['jumlah masuk'] || r['jumlah'] || 0),
+        hargaModal: cleanNum(r['harga_modal'] || r['harga modal'] || 0),
         keterangan: r['keterangan'] || '',
       }));
     if (fetched.length) {
@@ -1590,6 +2042,7 @@ async function pullFromCSV(silent) {
       fetchDetailPenjualan(),
     ]);
     await fetchStokCSV();
+    await fetchArusKasCSV();
     // Render semua halaman agar data tersedia langsung saat dibuka
     renderDashboard();
     renderRecent();
@@ -1727,7 +2180,8 @@ function showPage(name) {
     'bulanan':   'bulanan',
     'tahunan':   'tahunan',
     'produk':    'produk',
-    'stok':      'stok'
+    'stok':      'stok',
+    'aruskas':   'arus'
   };
   const keyword = pageNavMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b => {
@@ -1756,6 +2210,7 @@ function showPage(name) {
   else if (name === 'tahunan') renderTahunan();
   else if (name === 'produk') renderProduk();
   else if (name === 'stok') { renderStok(); renderStokKPI(); initStokRows(); }
+  else if (name === 'aruskas') initArusKas();
   // Scroll to top on mobile
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2812,6 +3267,7 @@ async function resetAndPull() {
   salesData   = [];
   stokData    = {};
   riwayatStok = [];
+  arusKasData = [];
   // Tarik ulang dari Sheets
   await pullFromSheets();
 }
@@ -3055,6 +3511,7 @@ function saveStokMasukAll() {
       id: Date.now() + saved,
       tanggal, produk: produk.nama,
       jumlah, jumlahPcs,
+      hargaModal: produk.harga_modal || 0,
       keterangan: ketUmum + (isiPerPack > 1 ? ` [${jumlah} pack × ${isiPerPack} = ${jumlahPcs} pcs]` : '')
     });
     saved++;
@@ -3066,6 +3523,10 @@ function saveStokMasukAll() {
   clearStokForm();
   renderStok();
   renderStokKPI();
+  // ── Update arus kas otomatis (stok masuk → Pengeluaran Beli Stok) ──
+  renderAKKPI();
+  renderAKTable();
+  renderAKChart();
 }
 
 // Backward compat
@@ -3503,6 +3964,378 @@ if (!navigator.onLine) {
 </script>
 
 <script>
+// ══════════════════════════════════════════════════════════════════════════════
+// ARUS KAS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Data arus kas: gabungan otomatis (omzet) + manual
+let arusKasData = []; // { tanggal, tipe, kategori, keterangan, jumlah, rowId, auto }
+
+const AK_KATEGORI = {
+  PEMASUKAN:   ['Tambahan Modal', 'Lainnya'],
+  PENGELUARAN: ['Operasional', 'Pribadi', 'Lainnya'],
+};
+
+const AK_KATEGORI_INFO = {
+  'Tambahan Modal': 'Dana tambahan dari usaha lain / tabungan pribadi yang masuk ke kas toko.',
+  'Operasional':    'Biaya operasional toko: listrik, sewa, transport, dll.',
+  'Pribadi':        'Pengeluaran pribadi yang diambil dari kas toko (prive/withdrawal).',
+  'Lainnya':        'Transaksi lain yang tidak masuk kategori di atas.',
+};
+
+let akTipe = 'PEMASUKAN';
+let akFormMinimized = false;
+let akPage = 0;
+const AK_PER_PAGE = 30;
+
+// ── Build data omzet otomatis dari salesData (per hari) ──
+function buildAKOmzetOtomatis() {
+  const byDate = {};
+  for (const d of salesData) {
+    if (!byDate[d.tanggal]) byDate[d.tanggal] = 0;
+    byDate[d.tanggal] += d.omzet || 0;
+  }
+  return Object.entries(byDate).map(([tanggal, jumlah]) => ({
+    tanggal,
+    tipe:       'PEMASUKAN',
+    kategori:   'Omzet',
+    keterangan: 'Auto – Omzet Penjualan',
+    jumlah,
+    rowId:      'auto_' + tanggal,
+    auto:       true,
+  }));
+}
+
+// ── Build data stok masuk otomatis dari riwayatStok ──
+function buildAKStokOtomatis() {
+  return riwayatStok.map(r => {
+    // Pakai hargaModal yang di-snapshot saat stok masuk dicatat
+    // Fallback ke master produk untuk data lama yang belum punya snapshot
+    let hargaModal = r.hargaModal || 0;
+    if (!hargaModal) {
+      const produk = PRODUCTS.find(p => p.nama === r.produk);
+      hargaModal = (produk && produk.harga_modal > 0) ? produk.harga_modal : 0;
+    }
+    const jumlah = hargaModal > 0 ? r.jumlah * hargaModal : 0;
+    return {
+      tanggal:    r.tanggal,
+      tipe:       'PENGELUARAN',
+      kategori:   'Beli Stok',
+      keterangan: `Auto – Stok Masuk: ${r.produk} (${r.jumlah} pack)`,
+      jumlah,
+      rowId:      'autostok_' + r.id,
+      auto:       true,
+    };
+  }).filter(d => d.jumlah > 0);
+}
+
+// ── Gabungkan omzet otomatis + stok otomatis + manual ──
+function getAKCombined() {
+  const omzetAuto = buildAKOmzetOtomatis();
+  const stokAuto  = buildAKStokOtomatis();
+  // Hindari duplikat: kalau ada manual dengan rowId auto_, skip
+  const manualOnly = arusKasData.filter(d => !d.auto);
+  return [...omzetAuto, ...stokAuto, ...manualOnly].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+}
+
+// ── Set tipe form ──
+function setAKTipe(tipe) {
+  akTipe = tipe;
+  document.getElementById('ak-btn-masuk').classList.toggle('active', tipe === 'PEMASUKAN');
+  document.getElementById('ak-btn-keluar').classList.toggle('active', tipe === 'PENGELUARAN');
+
+  const sel = document.getElementById('ak-kategori');
+  sel.innerHTML = '<option value="">-- Pilih --</option>' +
+    AK_KATEGORI[tipe].map(k => `<option value="${k}">${k}</option>`).join('');
+  document.getElementById('ak-kategori-info').style.display = 'none';
+}
+
+function renderAKKategoriInfo() {
+  const k = document.getElementById('ak-kategori').value;
+  const el = document.getElementById('ak-kategori-info');
+  if (k && AK_KATEGORI_INFO[k]) {
+    el.textContent = '💡 ' + AK_KATEGORI_INFO[k];
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function toggleAKForm() {
+  akFormMinimized = !akFormMinimized;
+  const body = document.getElementById('ak-form-body');
+  const icon = document.getElementById('ak-form-toggle-icon');
+  body.style.display = akFormMinimized ? 'none' : '';
+  icon.style.transform = akFormMinimized ? 'rotate(180deg)' : '';
+}
+
+function clearAKForm() {
+  document.getElementById('ak-tanggal').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ak-jumlah').value = '';
+  document.getElementById('ak-keterangan').value = '';
+  setAKTipe('PEMASUKAN');
+  document.getElementById('ak-kategori').value = '';
+  document.getElementById('ak-kategori-info').style.display = 'none';
+}
+
+// ── Simpan entry ──
+async function saveAKEntry() {
+  const tanggal    = document.getElementById('ak-tanggal').value;
+  const kategori   = document.getElementById('ak-kategori').value;
+  const jumlah     = parseInt(document.getElementById('ak-jumlah').value) || 0;
+  const keterangan = document.getElementById('ak-keterangan').value.trim();
+
+  if (!tanggal)   return showAlert('Pilih tanggal dulu!', false);
+  if (!kategori)  return showAlert('Pilih kategori dulu!', false);
+  if (jumlah <= 0) return showAlert('Jumlah harus lebih dari 0!', false);
+
+  const rowId = 'mk_' + Date.now();
+  const entry = { tanggal, tipe: akTipe, kategori, keterangan, jumlah, rowId, auto: false };
+
+  arusKasData.push(entry);
+  clearAKForm();
+  renderAKKPI();
+  renderAKTable();
+  renderAKChart();
+  showAlert('⏳ Menyimpan ke Google Sheets...', true);
+
+  // Push ke GAS
+  if (GAS_URL) {
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'addArusKas', transaksi: [entry] })
+      });
+      const result = await res.json();
+      if (result.status === 'ok') {
+        showAlert('✅ Transaksi berhasil disimpan!', true);
+      } else {
+        showAlert('⚠️ Tersimpan lokal, gagal ke Sheets: ' + result.message, false);
+      }
+    } catch(e) {
+      showAlert('⚠️ Tersimpan lokal, gagal koneksi ke Sheets.', false);
+    }
+  } else {
+    showAlert('✅ Transaksi berhasil disimpan!', true);
+  }
+}
+
+// ── Hapus entry manual ──
+async function deleteAKEntry(rowId) {
+  if (!confirm('Hapus transaksi ini?')) return;
+  arusKasData = arusKasData.filter(d => d.rowId !== rowId);
+  renderAKKPI();
+  renderAKTable();
+  renderAKChart();
+
+  if (GAS_URL) {
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'deleteArusKas', rowId })
+      });
+    } catch(e) { /* silent */ }
+  }
+  showAlert('Transaksi dihapus.', true);
+}
+
+// ── KPI Cards ──
+function renderAKKPI() {
+  const combined = getAKCombined();
+  const totalMasuk  = combined.filter(d => d.tipe === 'PEMASUKAN').reduce((s,d) => s + d.jumlah, 0);
+  const totalKeluar = combined.filter(d => d.tipe === 'PENGELUARAN').reduce((s,d) => s + d.jumlah, 0);
+  const saldo       = totalMasuk - totalKeluar;
+
+  document.getElementById('ak-kpi-masuk').textContent  = rp(totalMasuk);
+  document.getElementById('ak-kpi-keluar').textContent = rp(totalKeluar);
+  document.getElementById('ak-kpi-saldo').textContent  = rp(saldo);
+
+  const saldoEl = document.getElementById('ak-kpi-saldo');
+  saldoEl.style.color = saldo >= 0 ? 'var(--gold2)' : '#EF9A9A';
+
+  // Sub info
+  const omzetTotal  = combined.filter(d => d.kategori === 'Omzet').reduce((s,d) => s + d.jumlah, 0);
+  const modalTotal  = combined.filter(d => d.kategori === 'Tambahan Modal').reduce((s,d) => s + d.jumlah, 0);
+  document.getElementById('ak-kpi-masuk-sub').textContent  =
+    `Omzet: ${rp(omzetTotal)} · Modal: ${rp(modalTotal)}`;
+
+  const stokTotal  = combined.filter(d => d.kategori === 'Beli Stok').reduce((s,d) => s + d.jumlah, 0);
+  // stokManual: hanya yang diinput manual, karena stok auto sudah tercermin lewat HPP di totalProfit
+  const stokManual = combined.filter(d => d.kategori === 'Beli Stok' && !d.auto).reduce((s,d) => s + d.jumlah, 0);
+  const opsTotal   = combined.filter(d => d.kategori === 'Operasional').reduce((s,d) => s + d.jumlah, 0);
+  const pribTotal  = combined.filter(d => d.kategori === 'Pribadi').reduce((s,d) => s + d.jumlah, 0);
+  document.getElementById('ak-kpi-keluar-sub').textContent =
+    `Stok: ${rp(stokTotal)} · Ops: ${rp(opsTotal)} · Pribadi: ${rp(pribTotal)}`;
+
+  // ── Saldo Keuntungan ──
+  // Total Profit = (harga_jual − HPP) × qty dari salesData
+  // HPP sudah diperhitungkan di margin, jadi hanya kurangi stok manual + operasional
+  let totalProfit = 0;
+  for (const d of salesData) {
+    const prod = PRODUCTS.find(p => p.nama === d.produk);
+    if (!prod || !prod.harga_modal) continue;
+    const isiPerPack = (prod.isi_per_pack > 0) ? prod.isi_per_pack : 1;
+    const hargaModalPerPcs = prod.harga_modal / isiPerPack;
+    const marginPck = (prod.harga_jual_pck || 0) - prod.harga_modal;
+    const marginEcr = (prod.harga_jual_ecr || 0) - hargaModalPerPcs;
+    totalProfit += marginPck * (d.pck || 0);
+    totalProfit += marginEcr * (d.ecr || 0);
+  }
+  const saldoUntung = totalProfit - stokManual - opsTotal;
+  const untungEl = document.getElementById('ak-kpi-untung');
+  untungEl.textContent = rp(saldoUntung);
+  untungEl.style.color = saldoUntung >= 0 ? '#4DB6AC' : '#EF9A9A';
+  document.getElementById('ak-kpi-untung-sub').textContent =
+    `Profit: ${rp(totalProfit)} − Ops: ${rp(opsTotal)}${stokManual > 0 ? ' − Stok manual: ' + rp(stokManual) : ''}`;
+
+  // ── Saldo Pribadi ──
+  const saldoPribadi = saldoUntung - pribTotal;
+  const pribadiEl = document.getElementById('ak-kpi-pribadi');
+  pribadiEl.textContent = rp(saldoPribadi);
+  pribadiEl.style.color = saldoPribadi >= 0 ? '#9FA8DA' : '#EF9A9A';
+  document.getElementById('ak-kpi-pribadi-sub').textContent =
+    `Keuntungan: ${rp(saldoUntung)} − Pribadi: ${rp(pribTotal)}`;
+}
+
+// ── Tabel Arus Kas ──
+function renderAKTable() {
+  const bulanFilter    = document.getElementById('ak-filter-bulan').value;
+  const tipeFilter     = document.getElementById('ak-filter-tipe').value;
+  const kategoriFilter = document.getElementById('ak-filter-kategori').value;
+
+  let data = getAKCombined();
+
+  if (bulanFilter !== 'all') {
+    const bulanIdx = parseInt(bulanFilter);
+    data = data.filter(d => {
+      const m = new Date(d.tanggal).getMonth();
+      return m === bulanIdx;
+    });
+  }
+  if (tipeFilter !== 'all')     data = data.filter(d => d.tipe === tipeFilter);
+  if (kategoriFilter !== 'all') data = data.filter(d => d.kategori === kategoriFilter);
+
+  const total = data.length;
+  const start = akPage * AK_PER_PAGE;
+  const slice = data.slice(start, start + AK_PER_PAGE);
+
+  const tbody = document.getElementById('ak-tbody');
+  if (!total) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div>Belum ada transaksi</div></div></td></tr>`;
+    document.getElementById('ak-pagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = slice.map(d => {
+    const badge = d.tipe === 'PEMASUKAN'
+      ? `<span class="ak-badge-pemasukan">⬆ Pemasukan</span>`
+      : `<span class="ak-badge-pengeluaran">⬇ Pengeluaran</span>`;
+    const jumlahColor = d.tipe === 'PEMASUKAN' ? '#81C784' : '#EF9A9A';
+    const jumlahPrefix = d.tipe === 'PEMASUKAN' ? '+' : '−';
+    const hapusBtn = d.auto
+      ? `<span style="color:var(--gray);font-size:0.75rem">Auto</span>`
+      : `<button onclick="deleteAKEntry('${d.rowId}')" class="btn-danger" style="padding:3px 10px;font-size:0.75rem">Hapus</button>`;
+    return `<tr>
+      <td style="white-space:nowrap">${d.tanggal}</td>
+      <td>${badge}</td>
+      <td><span class="badge badge-gold" style="font-size:0.73rem">${d.kategori}</span></td>
+      <td class="ak-col-ket" style="color:var(--gray);font-size:0.83rem">${d.keterangan || '–'}</td>
+      <td class="num" style="color:${jumlahColor};font-weight:700">${jumlahPrefix}${rp(d.jumlah)}</td>
+      <td>${hapusBtn}</td>
+    </tr>`;
+  }).join('');
+
+  // Pagination
+  const pages = Math.ceil(total / AK_PER_PAGE);
+  const pag = document.getElementById('ak-pagination');
+  pag.innerHTML = `<span class="page-info">${total} transaksi</span>` +
+    Array.from({length: pages}, (_, i) =>
+      `<button class="page-btn ${i === akPage ? 'active' : ''}" onclick="akPage=${i};renderAKTable()">${i+1}</button>`
+    ).join('');
+}
+
+// ── Chart Arus Kas per Bulan ──
+function renderAKChart() {
+  const combined = getAKCombined();
+
+  const masukPerBulan  = Array(12).fill(0);
+  const keluarPerBulan = Array(12).fill(0);
+
+  combined.forEach(d => {
+    const m = new Date(d.tanggal).getMonth();
+    if (isNaN(m)) return;
+    if (d.tipe === 'PEMASUKAN')   masukPerBulan[m]  += d.jumlah;
+    if (d.tipe === 'PENGELUARAN') keluarPerBulan[m] += d.jumlah;
+  });
+
+  destroyChart('chart-aruskas');
+  charts['chart-aruskas'] = new Chart(document.getElementById('chart-aruskas'), {
+    type: 'bar',
+    data: {
+      labels: MONTH_NAMES.map(m => m.substring(0,3)),
+      datasets: [
+        {
+          label: 'Pemasukan',
+          data: masukPerBulan,
+          backgroundColor: 'rgba(76,175,80,0.6)',
+          borderColor: 'rgba(76,175,80,0.9)',
+          borderWidth: 1, borderRadius: 4,
+        },
+        {
+          label: 'Pengeluaran',
+          data: keluarPerBulan,
+          backgroundColor: 'rgba(229,57,53,0.55)',
+          borderColor: 'rgba(229,57,53,0.85)',
+          borderWidth: 1, borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: { labels: { color: '#FAFAFA', font: { family: 'DM Sans' } } },
+        tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + rp(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { ticks: { color:'#888', font:{ family:'DM Sans', size:10 } }, grid:{ color:'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color:'#888', font:{ family:'DM Sans', size:10 }, callback: v => 'Rp'+fmt(v) }, grid:{ color:'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+// ── Fetch Arus Kas dari Sheets saat pull ──
+async function fetchArusKasCSV() {
+  try {
+    const text = await fetchSheetByName('ARUS KAS');
+    const rows = parseCSV(text);
+    if (!rows.length) return;
+    arusKasData = rows
+      .filter(r => r['tanggal'] && r['tipe'] && !String(r['row_id'] || '').startsWith('auto_'))
+      .map(r => ({
+        tanggal:    r['tanggal']    || '',
+        tipe:       (r['tipe']      || '').toUpperCase().trim(),
+        kategori:   r['kategori']   || '',
+        keterangan: r['keterangan'] || '',
+        jumlah:     cleanNum(r['jumlah'] || 0),
+        rowId:      r['row_id']     || '',
+        auto:       false,
+      }));
+  } catch(e) { console.warn('fetchArusKasCSV error:', e.message); }
+}
+
+// ── Init halaman Arus Kas ──
+function initArusKas() {
+  clearAKForm();
+  renderAKKPI();
+  renderAKTable();
+  renderAKChart();
+}
+
+</script>
+
+<script>
 if ('serviceWorker' in navigator) {
   const swCode = `
     const CACHE = 'qp-cache-v1';
@@ -3525,14 +4358,60 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register(swURL).catch(() => {});
 }
 
-// ── THEME TOGGLE ──
-function toggleTheme() {
+// ── THEME AUTO-SCHEDULE ──
+// Gelap: 18:00–05:59 | Terang: 06:00–17:59
+// Override manual reset otomatis saat jadwal berganti
+
+let _themeScheduleTimer = null;
+
+function isNightTime(date) {
+  const h = (date || new Date()).getHours();
+  return h >= 18 || h < 6;
+}
+
+function applyTheme(isLight, saveOverride) {
   const body = document.body;
-  const btn = document.getElementById('theme-toggle-btn');
-  const isLight = body.classList.toggle('light-mode');
-  btn.textContent = isLight ? '☀️' : '🌙';
-  btn.title = isLight ? 'Mode Gelap' : 'Mode Terang';
-  localStorage.setItem('qp-theme', isLight ? 'light' : 'dark');
+  const btn  = document.getElementById('theme-toggle-btn');
+  body.classList.toggle('light-mode', isLight);
+  if (btn) {
+    btn.textContent = isLight ? '☀️' : '🌙';
+    btn.title       = isLight ? 'Mode Gelap' : 'Mode Terang';
+  }
+  if (saveOverride !== undefined) {
+    localStorage.setItem('qp-theme', saveOverride ? 'light' : 'dark');
+    localStorage.setItem('qp-theme-override', '1');
+  }
+}
+
+function getScheduledTheme() {
+  const override   = localStorage.getItem('qp-theme-override');
+  const savedTheme = localStorage.getItem('qp-theme');
+  const scheduledLight = !isNightTime();
+  if (override === '1' && savedTheme !== null) {
+    const overrideIsLight = savedTheme === 'light';
+    // Jika jadwal sudah berganti sejak override, buang override
+    if (overrideIsLight !== scheduledLight) {
+      localStorage.removeItem('qp-theme-override');
+      return scheduledLight;
+    }
+    return overrideIsLight;
+  }
+  return scheduledLight;
+}
+
+function toggleTheme() {
+  const isCurrentlyLight = document.body.classList.contains('light-mode');
+  applyTheme(!isCurrentlyLight, !isCurrentlyLight);
+}
+
+function startThemeScheduler() {
+  if (_themeScheduleTimer) clearInterval(_themeScheduleTimer);
+  _themeScheduleTimer = setInterval(() => {
+    if (localStorage.getItem('qp-theme-override') === '1') return;
+    const shouldBeLight    = !isNightTime();
+    const isCurrentlyLight = document.body.classList.contains('light-mode');
+    if (shouldBeLight !== isCurrentlyLight) applyTheme(shouldBeLight);
+  }, 60 * 1000);
 }
 // initTheme dipanggil dari hideLoadingScreen agar tidak trigger transition saat muat
 
@@ -3558,12 +4437,10 @@ function installPWA() {
 // ── Init tema TANPA transition (hindari flicker & gangguan loading screen) ──
 function initTheme() {
   document.body.classList.add('no-transition');
-  const saved = localStorage.getItem('qp-theme');
-  if (saved === 'light') {
-    document.body.classList.add('light-mode');
-    const btn = document.getElementById('theme-toggle-btn');
-    if (btn) { btn.textContent = '☀️'; btn.title = 'Mode Gelap'; }
-  }
+  const isLight = getScheduledTheme();
+  applyTheme(isLight);
+  // Jalankan scheduler otomatis
+  startThemeScheduler();
   // Beri 1 frame agar browser render dulu, baru aktifkan transition kembali
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
@@ -3694,6 +4571,86 @@ setTimeout(hideLoadingScreen, 8000);
       </div>
     </div>
   </div>
+
+<!-- AUDIO BACKGROUND MUSIC -->
+<audio id="bg-music" loop preload="auto">
+  <source src="musikbg.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// ── BACKGROUND MUSIC ──
+(function() {
+  const audio = document.getElementById('bg-music');
+  const btn   = document.getElementById('music-toggle-btn');
+  let isPlaying = false;
+
+  // Restore volume preference
+  audio.volume = parseFloat(localStorage.getItem('qp-music-vol') || '0.35');
+
+  function setPlaying(state) {
+    isPlaying = state;
+    btn.textContent = state ? '♫' : '♪';
+    btn.title       = state ? 'Pause musik' : 'Putar musik';
+    btn.classList.toggle('playing', state);
+    localStorage.setItem('qp-music-playing', state ? '1' : '0');
+  }
+
+  window.toggleMusic = function() {
+    if (isPlaying) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    }
+  };
+
+  // Expose setPlaying agar enterSite() bisa update state isPlaying
+  window.setMusicPlaying = setPlaying;
+
+  // Autoplay dihandle oleh enterSite() via overlay
+  // Fallback: jika overlay sudah tidak ada (misal reload), restore state dari localStorage
+  if (!document.getElementById('entry-overlay')) {
+    const pref = localStorage.getItem('qp-music-playing');
+    if (pref === '1') {
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+    }
+  }
+
+  // ── Pause saat pindah tab/browser, play kembali saat balik ──
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (isPlaying) { audio.pause(); }
+    } else {
+      if (isPlaying) { audio.play().catch(() => {}); }
+    }
+  });
+
+})();
+
+// ── ENTRY OVERLAY ──
+function enterSite() {
+  const overlay = document.getElementById('entry-overlay');
+  if (!overlay || overlay._entered) return;
+  overlay._entered = true;
+
+  // Autoplay musik
+  const audio = document.getElementById('bg-music');
+  if (audio) {
+    audio.play().then(() => {
+      if (window.setMusicPlaying) window.setMusicPlaying(true);
+      else {
+        const btn = document.getElementById('music-toggle-btn');
+        if (btn) { btn.textContent = '♫'; btn.title = 'Pause musik'; btn.classList.add('playing'); }
+        localStorage.setItem('qp-music-playing', '1');
+      }
+    }).catch(() => {});
+  }
+
+  // Fade out overlay lalu hapus
+  overlay.classList.add('closing');
+  setTimeout(() => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 750);
+}
+</script>
 
 </body>
 </html>
